@@ -7,10 +7,6 @@ import peersim.core.CommonState;
 import peersim.core.Linkable;
 import peersim.core.Node;
 
-/**
- * Template class for distributed application placement.
- *
- */
 public class DistributedResourceAllocation extends
 		DistributedPlacementProtocol {
 
@@ -52,13 +48,15 @@ public class DistributedResourceAllocation extends
 		return tempA_n;
 	}
 
-	public void updatePlacement(ApplicationsList A_n_prime) {
-		//TODO Implement your code for task 2 here
-
+	public void updatePlacement(ApplicationsList A_n_prime)
+	{
+		// Implement your code for task 2 here.
+		
 	}
-
 	
-
+	
+	
+	
 	public Object clone() {
 		DistributedResourceAllocation proto = new DistributedResourceAllocation(
 				this.prefix, this.cpuCapacity);

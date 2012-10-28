@@ -13,18 +13,6 @@ import java.util.ArrayList;
  */
 public class ApplicationsList extends ArrayList<Application> {
 
-	/**
-	 * Flag to indicate whether the totalDemandCache is updated or not
-	 */
-	private boolean totalDemandUpdated;
-	
-	/**
-	 * Total application demand cache for speedy retrieval of total CPU demand.
-	 */
-	private double totalDemandCache;
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -2896826171558618679L;
 
 	/**
@@ -32,8 +20,6 @@ public class ApplicationsList extends ArrayList<Application> {
 	 */
 	public ApplicationsList()
 	{
-		totalDemandUpdated = true;
-		totalDemandCache   = 0.0;
 		
 	}
 	
@@ -44,7 +30,6 @@ public class ApplicationsList extends ArrayList<Application> {
 	{
 		
 		boolean result = super.add(a);
-		totalDemandUpdated = true;
 		return result;
 		
 	}
@@ -56,20 +41,16 @@ public class ApplicationsList extends ArrayList<Application> {
 	public boolean remove(Application a)
 	{
 		boolean result = super.remove(a);
-		totalDemandUpdated = true;
 		return result;
 	}
 	
 	
 	/**
-	 * Retrieve total CPU demand from this placement. The result will come from cache if it is possible.
-	 * Please note that the result from this method is valid if and only if 
-	 * the user of the class add and remove object via the add and remove method overrided in this class.
+	 * Retrieve total CPU demand from this placement. 
 	 * @return
 	 */
 	public double totalCPUDemand()
 	{
-		//if (!totalDemandUpdated) return totalDemandCache;
 		
 		double totalDemand = 0;
 		for( Application a: this)
@@ -77,13 +58,29 @@ public class ApplicationsList extends ArrayList<Application> {
 			totalDemand += a.getCPUDemand();
 		}
 		
-		totalDemandCache = totalDemand;
-		totalDemandUpdated = false;
 		
 		
-		return totalDemandCache;
+		return totalDemand;
 	}
 
-	
+	/**
+	 * Retrieve total memory demand from this placement. 
+	 * @return
+	 */
+	public double totalMemoryDemand()
+	{
+		
+		double totalDemand = 0;
+		for( Application a: this)
+		{
+			totalDemand += a.getMemoryDemand();
+		}
+		
+		
+		
+		return totalDemand;
+	}
+
+
 	
 }

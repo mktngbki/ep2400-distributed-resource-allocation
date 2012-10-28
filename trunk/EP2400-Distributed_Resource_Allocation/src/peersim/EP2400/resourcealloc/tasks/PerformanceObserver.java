@@ -1,11 +1,8 @@
 package peersim.EP2400.resourcealloc.tasks;
 
 import peersim.config.Configuration;
-import peersim.core.CommonState;
 import peersim.core.Control;
-/**
- * Template class for Performance observer according to metrics discussed in the project description
- */
+
 public class PerformanceObserver implements Control {
 
 	/**
@@ -28,15 +25,19 @@ public class PerformanceObserver implements Control {
 	private final int pid;
 
 	private final String prefix;
+
+	/**
+	 * Constant r_max in the simulation
+	 */
 	private final int r_max;
 
-/**
+	/**
 	 * Number of application
 	 */
 	protected int appsCount;
 
 	
-	 /**
+	/**
 	 * Standard constructor that reads the configuration parameters. Invoked by
 	 * the simulation engine.
 	 * 
@@ -46,17 +47,17 @@ public class PerformanceObserver implements Control {
 	public PerformanceObserver(String prefix) {
 		this.prefix = prefix;
 		pid = Configuration.getPid(prefix + "." + PAR_PROT);
-		appsCount = Configuration.getInt(prefix + "." + PAR_APPSCOUNT);
 		r_max = Configuration.getInt(prefix + "." + PAR_R_MAX);
+		appsCount = Configuration.getInt(prefix + "." + PAR_APPSCOUNT);
 
-	}
+			}
+	
 
+	
 	@Override
 	public boolean execute() {
 
-		int cycle = (int) CommonState.getTime();
-
-		//TODO Implement your code for task 1.2 here
+		// Implement your code for task 1 here...
 		
 
 		return false;

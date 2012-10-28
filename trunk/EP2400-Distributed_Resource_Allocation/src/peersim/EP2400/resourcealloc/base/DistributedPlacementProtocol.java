@@ -28,14 +28,14 @@ public class DistributedPlacementProtocol implements CDProtocol{
 	 */
 	private ApplicationsList A_n;
 	
-	protected static final String PAR_CPU_CAPACITY = "cpu_capacity";
+	protected static final String PAR_CPU_CAPACITY    = "cpu_capacity";
 	
 	
 	
 	
 	
 	/**
-	 * CPU final capacity value set from PlacementInitializer
+	 * CPU capacity value set from PlacementInitializer
 	 */
 	protected final double cpuCapacity;
 	
@@ -47,7 +47,8 @@ public class DistributedPlacementProtocol implements CDProtocol{
     public double getCpuCapacity() {
 		return cpuCapacity;
 	}
-
+    
+  
 
 	// ------------------------------------------------------------------------
     // Initialization
@@ -61,18 +62,17 @@ public class DistributedPlacementProtocol implements CDProtocol{
      */
     public DistributedPlacementProtocol(String prefix) {
         this.prefix = prefix;
-        // get cpu capacity value from the config file, default 100.0
-        cpuCapacity = Configuration.getDouble(prefix + "." + PAR_CPU_CAPACITY);
+        cpuCapacity = Configuration.getDouble(prefix + "."    + PAR_CPU_CAPACITY);
         A_n      = new ApplicationsList();
     }
 
-    public DistributedPlacementProtocol(String prefix, double cpu_capacity_value) {
+ public DistributedPlacementProtocol(String prefix, double cpu_capacity_value) {
         
         this.prefix = prefix;
-        // get cpu capacity value from the config file, default 100.0
-        this.cpuCapacity = cpu_capacity_value;
+        this.cpuCapacity    = cpu_capacity_value;
         A_n      = new ApplicationsList();
     }
+    
     
     public void nextCycle(Node node, int protocolID)
     {
@@ -85,7 +85,6 @@ public class DistributedPlacementProtocol implements CDProtocol{
      */
    public void allocateApplication(Application a)
    {
-	 //  System.out.println(" Allocating application ID :" + a.getID());
 	   A_n.add(a);
 	   a.setDistPlacementProtocol(this);
 	   a.incrementValidator();
@@ -141,7 +140,7 @@ public class DistributedPlacementProtocol implements CDProtocol{
    public Object clone()
    {
 	   DistributedPlacementProtocol proto = new DistributedPlacementProtocol(this.prefix, this.cpuCapacity);
-		return proto;
+	   return proto;
    }
    
 
