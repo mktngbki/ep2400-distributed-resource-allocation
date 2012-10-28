@@ -43,6 +43,12 @@ public class Application {
 	private double CPUDemand;
 	
 
+	/**
+	 * memory demand of an application
+	 */
+	private double MemoryDemand;
+	
+
 	
 	
 	
@@ -118,6 +124,23 @@ public class Application {
 		
 		CPUDemand = cpuDemand;
 		 
+	}
+
+	/**
+	 * Accessor for current memory demand
+	 * @return
+	 */
+	public double getMemoryDemand() {
+		return MemoryDemand;
+	}
+
+	
+	/**
+	 * Setter for the memory demand
+	 */
+	
+	public void setMemoryDemand(double memoryDemand) {
+		MemoryDemand = memoryDemand;
 	}
 
 	/**

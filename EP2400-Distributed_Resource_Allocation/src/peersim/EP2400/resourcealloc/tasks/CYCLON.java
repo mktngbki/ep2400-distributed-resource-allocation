@@ -15,9 +15,7 @@ import peersim.config.*;
 import peersim.core.*;
 
 /**
- * 
- * Template class for CYCLON implementation
- *
+ * This class is for CYCLON protocol implementation
  */
 public class CYCLON implements CDProtocol, Linkable
 {
@@ -144,33 +142,34 @@ public boolean contains(Node n)
 }
 
 
-private void validate()
-{
-	if (entries.size() > cacheSize)
-	{
-		System.out.println(" CYCLON constraint is invalid : Entry size is higher than cache size");
-		System.out.println(" Terminating now");
-	}
-
-}
-
-
-
 // ===================== CDProtocol implementations ===================
 // ====================================================================
 
 public void nextCycle(Node n, int protocolID)
 {
 	validate();
-	//TODO Implement your code for task 1.1 here
+	
+	// Implement your code for task 1 here.
+	
 	
 }
 
 
+// Simple validation
+private void validate()
+{
+	if (entries.size() > cacheSize)
+	{
+		System.out.println(" CYCLON constraint is invalid : Entry size is higher than cache size");
+		System.out.println(" Terminating now");
+		System.exit(1);
+	}
 
+}
 
 @Override
-public void onKill() {}
-
+public void onKill() {
+	
+}
 
 }
