@@ -8,6 +8,7 @@ package peersim.EP2400.resourcealloc.tasks;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -22,7 +23,7 @@ import peersim.core.Node;
 public class CYCLON implements CDProtocol, Linkable
 {
 
-	public static class Entry
+	public static class Entry implements Comparable<Object>
 	{
 		public Entry(Node node, int age)
 		{
@@ -45,7 +46,21 @@ public class CYCLON implements CDProtocol, Linkable
 		}
 		private int age;
 
+		public int compareTo(Object otherEntry) {
+			// If passed object is of type other than Entry, throw ClassCastException.
+			if (!(otherEntry instanceof Entry)) {
+				throw new ClassCastException("It has been detected the presence of an invalid object!");
+			}
 
+			int age = ((Entry) otherEntry).getAge();
+
+			if (this.getAge() > age)
+				return 1;
+			else if (this.getAge() < age)
+				return -1;
+			else
+				return 0;
+		}
 	}
 
 
@@ -149,33 +164,36 @@ public class CYCLON implements CDProtocol, Linkable
 
 	public void nextCycle(Node n, int protocolID)
 	{
+		//If the current node does not have any neighbors there is no reason to run the method
+		if(entries.size() == 0){
+			return;
+		}
+		
 		validate();
 		
-		//step 1 increase age of ndoes
+		//Step 1 increase age of nodes
 		increaseNeighborsAge();
 		
-		//step 2 get oldest alive node
-		Node oldestNode = null;
-		do {
-			int indexON = getOldestNodeIndex();
-			oldestNode = entries.get(indexON).getNode();
-			entries.remove(indexON); //I have to remove the node from the entries if the node is not up or if i am exchanging shuffle lists with it
-			if(!oldestNode.isUp()) {
-				oldestNode = null;
-			}
-		} while(null == oldestNode);
+		//Step 2.1 get oldest alive node
+		Node oldestNode = getOldestNode();
 		
-		//step 2 get nodes for shuffle
+		//If the oldestNode is null it means that the current node does not have any active neighbor
+		//therefore there is no reason to continue the execution of the method
+		if(oldestNode == null){
+			return;
+		}
+		
+		//Step 2.2 get nodes for shuffle - It is used shuffleLength - 1 since the node puts its reference in the next step
 		List<Entry> sentShuffleList = getShuffleNodes(shuffleLength - 1);
 		
-		//step 3 adding self with timestamp 0 in the list
+		//Step 3 adding self with timestamp 0 in the list
 		sentShuffleList.add(new Entry(n, 0));
 		
-		//step 4 and 5
+		//Step 4 and 5 send and receive a set of peers
 		CYCLON neighborCyclon = (CYCLON)oldestNode.getProtocol(protocolID);
 		List<Entry> receivedShuffleList = neighborCyclon.shuffle(oldestNode, sentShuffleList);
 		
-		//step 6 and 7
+		//Step 6 and 7 update entries list
 		mergeNeighborLists(n, receivedShuffleList, sentShuffleList);
 	}
 	
@@ -190,24 +208,32 @@ public class CYCLON implements CDProtocol, Linkable
 	}
 	
 	private void increaseNeighborsAge() {
-		for(int i = 0; i < entries.size(); i++) {
-			int oldAge = entries.get(i).getAge();
-			entries.get(i).setAge(oldAge+1);
+		for(Entry entry: entries) {
+			int oldAge = entry.getAge();
+			entry.setAge(oldAge+1);
 		}
 	}
 
-	private int getOldestNodeIndex() {
-		//it would be easier if I could sort the neighbors by age and insert new neighbors based on age
-		//but because of the current addNeighbors implementation it can't be done. Not sure if method can be changed
-		int indexON = 0; //index of oldest node
-		int ageON = entries.get(0).getAge(); //age of oldest node
-		for(int i = 1; i < entries.size(); i++) {
-			if(ageON < entries.get(i).getAge()) {
-				ageON = entries.get(i).getAge();
-				indexON = i;
+	private Node getOldestNode() {
+		Node oldestNode = null;
+
+		do {
+			if(entries.isEmpty()){
+				return oldestNode;
 			}
-		}
-		return indexON;
+			
+			int lastIndex = entries.size()-1;
+			oldestNode = entries.get(lastIndex).getNode();
+
+			//The node needs to be removed both if it is not up or if it is the chosen one to shuffle lists with
+			entries.remove(lastIndex); 
+			
+			if(!oldestNode.isUp()) {
+				oldestNode = null;
+			}
+		} while(null == oldestNode);
+		
+		return oldestNode;
 	}
 	
 	private List<Entry> getShuffleNodes(int nrOfNodes) {
@@ -222,23 +248,28 @@ public class CYCLON implements CDProtocol, Linkable
 	}
 	
 	public void mergeNeighborLists(Node self, List<Entry> receivedList, List<Entry> sentList) {
-		//discard entries pointing at self
-		while(receivedList.contains(self)) {
-			receivedList.remove(self);
-		}
-		//entries should not contain self... but just to make sure. I do not know how the init of entries gets done...so initially self could be there.
-		while(entries.contains(self)) {
-			entries.remove(self);
+		//Discard entries pointing at self
+		if(receivedList.contains(self)) {
+			List<Node> selfList = new ArrayList<Node>();
+			selfList.add(self);
+			receivedList.removeAll(selfList);
 		}
 		
-		//discard entries from received that are already contained in the owned list(entries)
-		for(Entry e : receivedList) {
-			if(entries.contains(e)) {
-				receivedList.remove(e);
+		//To be safe - Double check that entries does not contain self
+		if(entries.contains(self)) {
+			List<Node> selfList = new ArrayList<Node>();
+			selfList.add(self);
+			entries.removeAll(selfList);
+		}
+		
+		//Discard entries from received that are already contained in the owned list(entries)
+		for(Entry entry : receivedList) {
+			if(entries.contains(entry)) {
+				receivedList.remove(entry);
 			}
 		}
 		
-		//reduce entries list size by removing random nodes that were sent to the other node
+		//Reduce entries list size by removing random nodes that were sent to the other node
 		entries.addAll(receivedList);
 		Random r = new Random(1234567890);
 		while(entries.size() > cacheSize) {
@@ -247,6 +278,7 @@ public class CYCLON implements CDProtocol, Linkable
 			entries.remove(removedEntry);
 		}
 		
+		Collections.sort(entries);
 	}
 	
 	// Simple validation
