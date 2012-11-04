@@ -13,43 +13,44 @@ import peersim.core.CommonState;
 import peersim.core.Linkable;
 import peersim.core.Node;
 
-public class DistributedResourceAllocation extends
-		DistributedPlacementProtocol {
-
+public class DistributedResourceAllocation extends DistributedPlacementProtocol {
+	private List<Application>	tempLeasedApps;							//promised to give this apps to another node
+	private PlacementStrategy	pStrategy	= new LoadBalanceStrategy();
+	
 	public DistributedResourceAllocation(String prefix) {
 		super(prefix);
 	}
-
+	
 	public DistributedResourceAllocation(String prefix, double cpu_capacity_value) {
 		super(prefix, cpu_capacity_value);
-
+		
 	}
-
+	
+	@Override
 	public void nextCycle(Node node, int protocolID) {
 		int linkableID = FastConfig.getLinkable(protocolID);
 		Linkable linkable = (Linkable) node.getProtocol(linkableID);
-
+		
 		int degree = linkable.degree();
 		int nbIndex = CommonState.r.nextInt(degree);
 		Node peer = linkable.getNeighbor(nbIndex);
 		// The selected peer could be inactive
-		if (!peer.isUp())
+		if (!peer.isUp()) {
 			return;
-
-		DistributedResourceAllocation n_prime = (DistributedResourceAllocation) peer
-				.getProtocol(protocolID);
-
+		}
+		
+		DistributedResourceAllocation n_prime = (DistributedResourceAllocation) peer.getProtocol(protocolID);
+		
 		// send and receive message by method call. This follows the
 		// cycle-driven simulation approach.
-//		ApplicationsList A_n_prime = n_prime.passiveThread(this
-//				.applicationsList());
-//
-//		this.updatePlacement(A_n_prime);
+		//		ApplicationsList A_n_prime = n_prime.passiveThread(this.applicationsList());
+		//
+		//		this.updatePlacement(A_n_prime);
 		
-		Proposal receivedProposal = n_prime.passiveThread_getProposal(this.applicationsList());
+		Proposal receivedProposal = n_prime.passiveThread_getProposal(applicationsList());
 		
 	}
-
+	
 	//passive thread
 	public Proposal passiveThread_getProposal(ApplicationsList appList) {
 		
@@ -57,23 +58,40 @@ public class DistributedResourceAllocation extends
 	}
 	
 	public ApplicationsList passiveThread(ApplicationsList A_n_prime) {
-		ApplicationsList tempA_n = this.applicationsList();
-		this.updatePlacement(A_n_prime);
+		ApplicationsList tempA_n = applicationsList();
+		updatePlacement(A_n_prime);
 		return tempA_n;
 	}
-
+	
 	public void updatePlacement(ApplicationsList A_n_prime)
 	{
-		// Implement your code for task 2 here.
+		// TODO: Implement your code for task 2 here.
 		
 	}
 	
-	public Object clone() {
-		DistributedResourceAllocation proto = new DistributedResourceAllocation(
-				this.prefix, this.cpuCapacity);
-		return proto;
+	public void updatePlacement(final Proposal receivedProposal) {
+		switch (receivedProposal.getProposalType()) {
+			case PUSH:
+				// TODO: Check that there is still available CPU Usage
+				
+				break;
+			case PULL:
+				// TODO: Check that the Apps requested are still available
+				
+				break;
+			case NO_ACTION:
+				// No action is required
+				break;
+			default:
+				// Unknown proposal type - No action needs to be performed
+				break;
+		}
 	}
 	
-	private List<Application> tempLeasedApps; //promised to give this apps to another node
-	private PlacementStrategy pStrategy = new LoadBalanceStrategy();
+	@Override
+	public Object clone() {
+		DistributedResourceAllocation proto = new DistributedResourceAllocation(
+			prefix, cpuCapacity);
+		return proto;
+	}
 }

@@ -9,7 +9,8 @@ import peersim.EP2400.resourcealloc.tasks.util.ApplicationInfo;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal.ProposalType;
 
-public class LoadBalanceStrategy extends PlacementStrategy {
+public class EnergyEfficientStrategy extends PlacementStrategy {
+	private static final double	CPU_USAGE_THRESHOLD	= 70;
 	
 	@Override
 	public Proposal getProposal(final List<ApplicationInfo> ownAppList, final List<ApplicationInfo> partnerAppList, final List<ApplicationInfo> leasedAppList) {
@@ -18,14 +19,19 @@ public class LoadBalanceStrategy extends PlacementStrategy {
 		ProposalType pType;
 		List<ApplicationInfo> propAppList;
 		
-		if (ownCPUUsage > partnerCPUUsage) {
+		double maxCPUUsage = Math.max(ownCPUUsage, partnerCPUUsage);
+		
+		if (maxCPUUsage == partnerCPUUsage && partnerCPUUsage < CPU_USAGE_THRESHOLD) {
 			pType = ProposalType.PUSH;
 			Collections.sort(ownAppList, new AppCPUComparator());
-			propAppList = getProposedAppList(ownCPUUsage - partnerCPUUsage, ownAppList, leasedAppList);
-		} else {
+			propAppList = getProposedAppList(CPU_USAGE_THRESHOLD - partnerCPUUsage, ownAppList, leasedAppList);
+		} else if (maxCPUUsage == ownCPUUsage && ownCPUUsage < CPU_USAGE_THRESHOLD) {
 			pType = ProposalType.PULL;
 			Collections.sort(partnerAppList, new AppCPUComparator());
-			propAppList = getProposedAppList(partnerCPUUsage - ownCPUUsage, partnerAppList, new ArrayList<ApplicationInfo>());
+			propAppList = getProposedAppList(CPU_USAGE_THRESHOLD - ownCPUUsage, partnerAppList, new ArrayList<ApplicationInfo>());
+		} else {
+			pType = ProposalType.NO_ACTION;
+			propAppList = new ArrayList<ApplicationInfo>();
 		}
 		
 		return new Proposal(pType, propAppList);

@@ -4,11 +4,11 @@ import java.util.List;
 
 public class Proposal {
 	public enum ProposalType {
-		PUSH, PULL;
+		PUSH, PULL, NO_ACTION;
 	}
-
-	private ProposalType pType;
-	private List<ApplicationInfo> appList;
+	
+	private ProposalType			pType;
+	private List<ApplicationInfo>	appList;
 	
 	public Proposal(ProposalType pType, List<ApplicationInfo> appList) {
 		this.pType = pType;
@@ -22,7 +22,7 @@ public class Proposal {
 	public List<ApplicationInfo> getApplicationsList() {
 		return appList;
 	}
-
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -31,23 +31,29 @@ public class Proposal {
 		result = prime * result + ((pType == null) ? 0 : pType.hashCode());
 		return result;
 	}
-
+	
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		Proposal other = (Proposal) obj;
 		if (appList == null) {
-			if (other.appList != null)
+			if (other.appList != null) {
 				return false;
-		} else if (!appList.equals(other.appList))
+			}
+		} else if (!appList.equals(other.appList)) {
 			return false;
-		if (pType != other.pType)
+		}
+		if (pType != other.pType) {
 			return false;
+		}
 		return true;
 	}
 	
