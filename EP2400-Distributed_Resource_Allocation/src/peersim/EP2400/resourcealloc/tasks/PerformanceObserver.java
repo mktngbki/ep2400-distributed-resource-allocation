@@ -4,38 +4,38 @@ import peersim.config.Configuration;
 import peersim.core.Control;
 
 public class PerformanceObserver implements Control {
-
+	
 	/**
 	 * The protocol to operate on.
 	 * 
 	 * @config
 	 */
-	private static final String PAR_PROT = "protocol";
-
+	private static final String	PAR_PROT		= "protocol";
+	
 	/**
 	 * The number of applications
 	 * 
 	 * @config
 	 */
-	private static final String PAR_APPSCOUNT = "apps_count";
-
-	private static final String PAR_R_MAX = "r_max";
-
+	private static final String	PAR_APPSCOUNT	= "apps_count";
+	
+	private static final String	PAR_R_MAX		= "r_max";
+	
 	/** Protocol identifier, obtained from config property {@link #PAR_PROT}. */
-	private final int pid;
-
-	private final String prefix;
-
+	private final int			pid;
+	
+	private final String		prefix;
+	
 	/**
 	 * Constant r_max in the simulation
 	 */
-	private final int r_max;
-
+	private final int			r_max;
+	
 	/**
 	 * Number of application
 	 */
-	protected int appsCount;
-
+	protected int				appsCount;
+	
 	
 	/**
 	 * Standard constructor that reads the configuration parameters. Invoked by
@@ -49,18 +49,17 @@ public class PerformanceObserver implements Control {
 		pid = Configuration.getPid(prefix + "." + PAR_PROT);
 		r_max = Configuration.getInt(prefix + "." + PAR_R_MAX);
 		appsCount = Configuration.getInt(prefix + "." + PAR_APPSCOUNT);
-
-			}
+		
+	}
 	
-
 	
 	@Override
 	public boolean execute() {
-
-		// Implement your code for task 1 here...
 		
-
+		// TODO: Implement your code for task 1 here...
+		
+		
 		return false;
 	}
-
+	
 }
