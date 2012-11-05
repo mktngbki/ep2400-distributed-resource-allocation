@@ -48,13 +48,19 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		//		this.updatePlacement(A_n_prime);
 		
 		Proposal receivedProposal = n_prime.passiveThread_getProposal(applicationsList());
-		
+		Proposal acceptedProposal = acceptProposal(receivedProposal);
+		n_prime.passiveThread_acceptProposal(acceptedProposal);
+		updatePlacement(acceptedProposal);
 	}
 	
 	//passive thread
 	public Proposal passiveThread_getProposal(ApplicationsList appList) {
 		
 		return null;
+	}
+	
+	public void passiveThread_acceptProposal(Proposal acceptedProposal) {
+		updatePlacement(acceptedProposal);
 	}
 	
 	public ApplicationsList passiveThread(ApplicationsList A_n_prime) {
