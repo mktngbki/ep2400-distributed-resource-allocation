@@ -53,6 +53,14 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		updatePlacement(acceptedProposal);
 	}
 	
+	public Proposal acceptProposal(Proposal receivedProposal) {
+		Proposal acceptedProposal = null;
+		synchronized (pStrategy) {
+			//build accepted proposal
+		}
+		return acceptedProposal;
+	}
+	
 	//passive thread
 	public Proposal passiveThread_getProposal(ApplicationsList appList) {
 		
