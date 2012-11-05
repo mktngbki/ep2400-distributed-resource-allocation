@@ -13,7 +13,8 @@ public class EnergyEfficientStrategy extends PlacementStrategy {
 	private static final double	CPU_USAGE_THRESHOLD	= 70;
 	
 	@Override
-	public Proposal getProposal(final List<ApplicationInfo> ownAppList, final List<ApplicationInfo> partnerAppList, final List<ApplicationInfo> leasedAppList) {
+	public synchronized Proposal getProposal(final List<ApplicationInfo> ownAppList, final List<ApplicationInfo> partnerAppList,
+		final List<ApplicationInfo> leasedAppList) {
 		double ownCPUUsage = getCPUUsage(ownAppList);
 		double partnerCPUUsage = getCPUUsage(partnerAppList);
 		ProposalType pType;
@@ -24,11 +25,11 @@ public class EnergyEfficientStrategy extends PlacementStrategy {
 		if (maxCPUUsage == partnerCPUUsage && partnerCPUUsage < CPU_USAGE_THRESHOLD) {
 			pType = ProposalType.PUSH;
 			Collections.sort(ownAppList, new AppCPUComparator());
-			propAppList = getProposedAppList(CPU_USAGE_THRESHOLD - partnerCPUUsage, ownAppList, leasedAppList);
+			propAppList = getAppListToPropose(CPU_USAGE_THRESHOLD - partnerCPUUsage, ownAppList, leasedAppList);
 		} else if (maxCPUUsage == ownCPUUsage && ownCPUUsage < CPU_USAGE_THRESHOLD) {
 			pType = ProposalType.PULL;
 			Collections.sort(partnerAppList, new AppCPUComparator());
-			propAppList = getProposedAppList(CPU_USAGE_THRESHOLD - ownCPUUsage, partnerAppList, new ArrayList<ApplicationInfo>());
+			propAppList = getAppListToPropose(CPU_USAGE_THRESHOLD - ownCPUUsage, partnerAppList, new ArrayList<ApplicationInfo>());
 		} else {
 			pType = ProposalType.NO_ACTION;
 			propAppList = new ArrayList<ApplicationInfo>();

@@ -3,6 +3,7 @@ package peersim.EP2400.resourcealloc.tasks.placementStartegy;
 import java.util.ArrayList;
 import java.util.List;
 
+import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.tasks.util.ApplicationInfo;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal;
 
@@ -16,7 +17,7 @@ public abstract class PlacementStrategy {
 	 * @param appList
 	 * @return
 	 */
-	protected double getCPUUsage(final List<ApplicationInfo> appList) {
+	public double getCPUUsage(final List<ApplicationInfo> appList) {
 		double cpuUsage = 0;
 		for (ApplicationInfo appInfo : appList) {
 			cpuUsage += appInfo.getApplication().getCPUDemand();
@@ -35,9 +36,16 @@ public abstract class PlacementStrategy {
 	*            not propose it to someone else
 	* @return
 	*/
-	protected List<ApplicationInfo> getProposedAppList(final double cpuUnits, final List<ApplicationInfo> appList, List<ApplicationInfo> leasedAppList) {
+	protected List<ApplicationInfo> getAppListToPropose(final double cpuUnits, final List<ApplicationInfo> appList, List<ApplicationInfo> leasedAppList) {
+		return getAppListToPropose(cpuUnits, appList, leasedAppList, false);
+	}
+	
+	protected List<ApplicationInfo> getAppListToPropose(final double cpuUnits, final List<ApplicationInfo> appList, List<ApplicationInfo> leasedAppList,
+		final boolean returnAtLeastSmallestApp) {
 		List<ApplicationInfo> retList = new ArrayList<ApplicationInfo>();
 		double usedCPUUnits = 0;
+		ApplicationInfo smallestApp = new ApplicationInfo(new Application(0, Integer.MAX_VALUE, Integer.MAX_VALUE), null);
+		
 		// first i try to move applications that someone else gave to me because
 		// i already paid the virtual cost of moving the app
 		// the cost for moving the app in one epoch is 1 if you move it once or
@@ -51,6 +59,10 @@ public abstract class PlacementStrategy {
 					retList.add(appInfo);
 					usedCPUUnits += appCPUDemand;
 				}
+				
+				if (smallestApp.getApplication().getCPUDemand() > appCPUDemand) {
+					smallestApp = appInfo;
+				}
 			}
 		}
 		
@@ -63,7 +75,15 @@ public abstract class PlacementStrategy {
 					retList.add(appInfo);
 					usedCPUUnits += appCPUDemand;
 				}
+				
+				if (smallestApp.getApplication().getCPUDemand() > appCPUDemand) {
+					smallestApp = appInfo;
+				}
 			}
+		}
+		
+		if (retList.isEmpty() && returnAtLeastSmallestApp && smallestApp.getApplication().getCPUDemand() != Integer.MAX_VALUE) {
+			retList.add(smallestApp);
 		}
 		
 		// all apps from proposal get leased

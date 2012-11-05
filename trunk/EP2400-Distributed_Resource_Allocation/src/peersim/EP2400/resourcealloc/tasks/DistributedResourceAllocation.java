@@ -1,21 +1,25 @@
 package peersim.EP2400.resourcealloc.tasks;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
 import peersim.EP2400.resourcealloc.base.DistributedPlacementProtocol;
-import peersim.EP2400.resourcealloc.tasks.placementStartegy.LoadBalanceStrategy;
+import peersim.EP2400.resourcealloc.tasks.placementStartegy.EnhancedStrategy;
 import peersim.EP2400.resourcealloc.tasks.placementStartegy.PlacementStrategy;
+import peersim.EP2400.resourcealloc.tasks.util.ApplicationInfo;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal;
+import peersim.EP2400.resourcealloc.tasks.util.Proposal.ProposalType;
 import peersim.config.FastConfig;
 import peersim.core.CommonState;
 import peersim.core.Linkable;
 import peersim.core.Node;
 
 public class DistributedResourceAllocation extends DistributedPlacementProtocol {
-	private List<Application>	tempLeasedApps;							//promised to give this apps to another node
-	private PlacementStrategy	pStrategy	= new LoadBalanceStrategy();
+	//TODO: DO not forget to initialize
+	private List<ApplicationInfo>	tempLeasedApps;						//promised to give this apps to another node
+	private PlacementStrategy		pStrategy	= new EnhancedStrategy();
 	
 	public DistributedResourceAllocation(String prefix) {
 		super(prefix);
@@ -47,51 +51,82 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		//
 		//		this.updatePlacement(A_n_prime);
 		
-		Proposal receivedProposal = n_prime.passiveThread_getProposal(applicationsList());
-		Proposal acceptedProposal = acceptProposal(receivedProposal);
-		n_prime.passiveThread_acceptProposal(acceptedProposal);
-		updatePlacement(acceptedProposal);
+		List<ApplicationInfo> ownAppList = buildAppInfoList(node, applicationsList());
+		
+		Proposal receivedProposal = n_prime.passiveThread_generateProposal(peer, ownAppList);
+		Proposal acceptedProposal = processProposal(receivedProposal);
+		n_prime.passiveThread_getAcceptedProposal(acceptedProposal);
+		updatePlacement(acceptedProposal, true);
 	}
 	
-	public Proposal acceptProposal(Proposal receivedProposal) {
+	public Proposal processProposal(final Proposal receivedProposal) {
 		Proposal acceptedProposal = null;
 		synchronized (pStrategy) {
-			//build accepted proposal
+			switch (receivedProposal.getProposalType()) {
+				case PUSH:
+					// Check that there is still available CPU Usage
+					if (getTotalDemand() >= pStrategy.getCPUUsage(receivedProposal.getApplicationsList())) {
+						acceptedProposal = receivedProposal;
+					} else {
+						List<ApplicationInfo> newAppSet = buildAppSetFromProposal(receivedProposal, new ArrayList<ApplicationInfo>());
+						acceptedProposal = new Proposal(receivedProposal.getProposalType(), newAppSet);
+					}
+					break;
+				case PULL:
+					// Check that the Apps requested are still available
+					List<ApplicationInfo> newAppSet = buildAppSetFromProposal(receivedProposal, tempLeasedApps);
+					acceptedProposal = new Proposal(receivedProposal.getProposalType(), newAppSet);
+					break;
+				default:
+					// Unknown proposal type - Create a fake reply
+					acceptedProposal = new Proposal(receivedProposal.getProposalType(), new ArrayList<ApplicationInfo>());
+					break;
+			}
 		}
+		
+		if (acceptedProposal.getApplicationsList().isEmpty()) {
+			acceptedProposal = new Proposal(ProposalType.NO_ACTION, null);
+		}
+		
 		return acceptedProposal;
 	}
 	
 	//passive thread
-	public Proposal passiveThread_getProposal(ApplicationsList appList) {
+	public Proposal passiveThread_generateProposal(final Node node, final List<ApplicationInfo> ownAppList) {
+		List<ApplicationInfo> partnerAppList = buildAppInfoList(node, applicationsList());
+		return pStrategy.getProposal(ownAppList, partnerAppList, tempLeasedApps);
+	}
+	
+	public void passiveThread_getAcceptedProposal(Proposal acceptedProposal) {
+		updatePlacement(acceptedProposal, false);
+	}
+	
+	public void updatePlacement(Proposal acceptedProposal, final boolean reverse) {
+		if (reverse) {
+			// TODO: Instantiate new proposal because we do not have setters... should we introduce them???
+			if (acceptedProposal.getProposalType() == ProposalType.PUSH) {
+				acceptedProposal = new Proposal(ProposalType.PULL, acceptedProposal.getApplicationsList());
+			} else if (acceptedProposal.getProposalType() == ProposalType.PULL) {
+				acceptedProposal = new Proposal(ProposalType.PUSH, acceptedProposal.getApplicationsList());
+			}
+		}
 		
-		return null;
-	}
-	
-	public void passiveThread_acceptProposal(Proposal acceptedProposal) {
-		updatePlacement(acceptedProposal);
-	}
-	
-	public ApplicationsList passiveThread(ApplicationsList A_n_prime) {
-		ApplicationsList tempA_n = applicationsList();
-		updatePlacement(A_n_prime);
-		return tempA_n;
-	}
-	
-	public void updatePlacement(ApplicationsList A_n_prime)
-	{
-		// TODO: Implement your code for task 2 here.
+		// TODO: tempLeasedApps needs to be updated somewhere!!
 		
-	}
-	
-	public void updatePlacement(final Proposal receivedProposal) {
-		switch (receivedProposal.getProposalType()) {
+		switch (acceptedProposal.getProposalType()) {
 			case PUSH:
-				// TODO: Check that there is still available CPU Usage
-				
+				// Deallocate accepted apps
+				for (Application app : applicationsList()) {
+					if (acceptedProposal.getApplicationsList().contains(app)) {
+						deallocateApplication(app);
+					}
+				}
 				break;
 			case PULL:
-				// TODO: Check that the Apps requested are still available
-				
+				// Allocate new apps
+				for (ApplicationInfo appInfo : acceptedProposal.getApplicationsList()) {
+					allocateApplication(appInfo.getApplication());
+				}
 				break;
 			case NO_ACTION:
 				// No action is required
@@ -107,5 +142,42 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		DistributedResourceAllocation proto = new DistributedResourceAllocation(
 			prefix, cpuCapacity);
 		return proto;
+	}
+	
+	@Deprecated
+	public ApplicationsList passiveThread(ApplicationsList A_n_prime) {
+		ApplicationsList tempA_n = applicationsList();
+		updatePlacement(A_n_prime);
+		return tempA_n;
+	}
+	
+	@Deprecated
+	public void updatePlacement(ApplicationsList A_n_prime)
+	{
+		// TODO: Implement your code for task 2 here.
+		
+	}
+	
+	private List<ApplicationInfo> buildAppInfoList(Node node, ApplicationsList applicationsList) {
+		List<ApplicationInfo> appInfoList = new ArrayList<ApplicationInfo>();
+		for (Application app : applicationsList) {
+			appInfoList.add(new ApplicationInfo(app, node));
+		}
+		return appInfoList;
+	}
+	
+	private List<ApplicationInfo> buildAppSetFromProposal(final Proposal receivedProposal, final List<ApplicationInfo> leasedAppList) {
+		List<ApplicationInfo> appInfoList = new ArrayList<ApplicationInfo>();
+		double usedCPUUnits = 0;
+		for (ApplicationInfo appInfo : receivedProposal.getApplicationsList()) {
+			if (!appInfo.appMoved() && !leasedAppList.contains(appInfo)) {
+				double appCPUDemand = appInfo.getApplication().getCPUDemand();
+				if (usedCPUUnits + appCPUDemand <= getTotalDemand()) {
+					appInfoList.add(appInfo);
+					usedCPUUnits += appCPUDemand;
+				}
+			}
+		}
+		return appInfoList;
 	}
 }
