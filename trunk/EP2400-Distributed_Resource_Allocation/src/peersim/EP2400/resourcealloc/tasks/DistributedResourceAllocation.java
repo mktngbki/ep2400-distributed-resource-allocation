@@ -17,17 +17,17 @@ import peersim.core.Linkable;
 import peersim.core.Node;
 
 public class DistributedResourceAllocation extends DistributedPlacementProtocol {
-	//TODO: DO not forget to initialize
 	private List<ApplicationInfo>	tempLeasedApps;						//promised to give this apps to another node
 	private PlacementStrategy		pStrategy	= new EnhancedStrategy();
 	
 	public DistributedResourceAllocation(String prefix) {
 		super(prefix);
+		tempLeasedApps = new ArrayList<ApplicationInfo>();
 	}
 	
 	public DistributedResourceAllocation(String prefix, double cpu_capacity_value) {
 		super(prefix, cpu_capacity_value);
-		
+		tempLeasedApps = new ArrayList<ApplicationInfo>();
 	}
 	
 	@Override
@@ -56,7 +56,11 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		Proposal receivedProposal = n_prime.passiveThread_generateProposal(peer, ownAppList);
 		Proposal acceptedProposal = processProposal(receivedProposal);
 		n_prime.passiveThread_getAcceptedProposal(acceptedProposal);
-		updatePlacement(acceptedProposal, true);
+		
+		// Since the type of Proposal is according to the passive Node we need to switch it in order to perform the correct updatePlacement
+		// A PUSH proposal for the passive Node is a PULL proposal for the active one
+		acceptedProposal = switchType(acceptedProposal);
+		updatePlacement(acceptedProposal);
 	}
 	
 	public Proposal processProposal(final Proposal receivedProposal) {
@@ -98,28 +102,21 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 	}
 	
 	public void passiveThread_getAcceptedProposal(Proposal acceptedProposal) {
-		updatePlacement(acceptedProposal, false);
+		updatePlacement(acceptedProposal);
 	}
 	
-	public void updatePlacement(Proposal acceptedProposal, final boolean reverse) {
-		if (reverse) {
-			// TODO: Instantiate new proposal because we do not have setters... should we introduce them???
-			if (acceptedProposal.getProposalType() == ProposalType.PUSH) {
-				acceptedProposal = new Proposal(ProposalType.PULL, acceptedProposal.getApplicationsList());
-			} else if (acceptedProposal.getProposalType() == ProposalType.PULL) {
-				acceptedProposal = new Proposal(ProposalType.PUSH, acceptedProposal.getApplicationsList());
-			}
-		}
+	public void updatePlacement(Proposal acceptedProposal) {
 		
 		// TODO: tempLeasedApps needs to be updated somewhere!!
 		
 		switch (acceptedProposal.getProposalType()) {
 			case PUSH:
 				// Deallocate accepted apps
-				for (Application app : applicationsList()) {
-					if (acceptedProposal.getApplicationsList().contains(app)) {
-						deallocateApplication(app);
+				for (Application app : acceptedProposal.getApplicationsList()) {
+					if (!applicationsList().contains(app)) {
+						throw new RuntimeException();
 					}
+					deallocateApplication(app);
 				}
 				break;
 			case PULL:
@@ -179,5 +176,14 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 			}
 		}
 		return appInfoList;
+	}
+	
+	private Proposal switchType(Proposal proposal) {
+		if (proposal.getProposalType() == ProposalType.PUSH) {
+			proposal = new Proposal(ProposalType.PULL, proposal.getApplicationsList());
+		} else if (proposal.getProposalType() == ProposalType.PULL) {
+			proposal = new Proposal(ProposalType.PUSH, proposal.getApplicationsList());
+		}
+		return proposal;
 	}
 }
