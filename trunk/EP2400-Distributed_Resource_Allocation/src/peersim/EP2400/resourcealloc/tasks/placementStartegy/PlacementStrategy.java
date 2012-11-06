@@ -37,9 +37,10 @@ public abstract class PlacementStrategy {
 			final Collection<Integer> promisedApps, final boolean returnExtraSmallestApp) {
 		double usedCPUUnits = 0;
 		ApplicationsList retList = new ApplicationsList();
-		ApplicationsList smallestApp = new ApplicationsList();
 		
 		Collections.sort(appList, new AppCPUComparator());
+		Application smallestNotPromisedApp = null;
+		
 		// Try to move applications that someone else gave to the node in order to minimize the reconfiguration cost
 		for (Application app : appList) {
 			if (!promisedApps.contains(app) && receivedApps.contains(app)) {
@@ -52,8 +53,6 @@ public abstract class PlacementStrategy {
 			}
 		}
 
-		Application smallestNotPromissedApp;
-		
 		// if i can add more applications of my own I add them
 		for (Application app : appList) {
 			if (!promisedApps.contains(app) && !receivedApps.contains(app)) {
@@ -62,13 +61,21 @@ public abstract class PlacementStrategy {
 					retList.add(app);
 					promisedApps.add(app.getID());
 					usedCPUUnits += appCPUDemand;
-				}
+				} 
 			}
-			if()
 		}
 		
-		if(usedCPUUnits < cpuUnits && returnExtraSmallestApp) {
-			
+		for(Application app : appList) {
+			if(!promisedApps.contains(app)) {
+				smallestNotPromisedApp = app;
+			}
+		}
+		
+		if(usedCPUUnits < cpuUnits && returnExtraSmallestApp && null != smallestNotPromisedApp) {
+			if(!promisedApps.contains(smallestNotPromisedApp)) {
+				retList.add(smallestNotPromisedApp);
+				promisedApps.add(smallestNotPromisedApp.getID());
+			}
 		}
 		
 		return retList;
