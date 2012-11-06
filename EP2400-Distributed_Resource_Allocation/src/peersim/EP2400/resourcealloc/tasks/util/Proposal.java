@@ -4,7 +4,7 @@ import peersim.EP2400.resourcealloc.base.ApplicationsList;
 
 public class Proposal {
 	public enum ProposalType {
-		PUSH, PULL, OVELOADED_PUSH, NO_ACTION;
+		PUSH, PULL, OVERLOADED_PUSH, NO_ACTION;
 	}
 	
 	private ProposalType		pType;
@@ -21,5 +21,15 @@ public class Proposal {
 	
 	public ApplicationsList getApplicationsList() {
 		return appList;
+	}
+	
+	public Proposal switchType() {
+		if (pType == ProposalType.PUSH) {
+			return new Proposal(ProposalType.PULL, appList);
+		} else if (pType == ProposalType.PULL) {
+			return new Proposal(ProposalType.PUSH, appList);
+		} else { //else if(pType == ProposalType.OVELOADED_PUSH) {
+			return new Proposal(ProposalType.PULL, appList);
+		}
 	}
 }
