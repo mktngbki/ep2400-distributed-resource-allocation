@@ -1,9 +1,11 @@
 package peersim.EP2400.resourcealloc.tasks.placementStartegy;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
+import peersim.EP2400.resourcealloc.tasks.util.AppCPUComparator;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal;
 
 public abstract class PlacementStrategy {
@@ -20,7 +22,7 @@ public abstract class PlacementStrategy {
 	* 
 	* @param cpuUnits
 	* @param appList
-	* @param leasedAppList
+	* @param promisedAppList
 	*            - contains apps that i promised to give to someone else. I do
 	*            at most one promise on each app. Once I promise an app I do
 	*            not propose it to someone else
@@ -32,43 +34,43 @@ public abstract class PlacementStrategy {
 	}
 	
 	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Collection<Integer> promisedApps,
-		final Collection<Integer> receivedApps, final boolean returnAtLeastSmallestApp) {
+		final Collection<Integer> receivedApps, final boolean returnExtraSmallestApp) {
 		double usedCPUUnits = 0;
 		ApplicationsList retList = new ApplicationsList();
 		ApplicationsList smallestApp = new ApplicationsList();
 		
+		Collections.sort(appList, new AppCPUComparator());
+		
 		// Try to move applications that someone else gave to the node in order to minimize the reconfiguration cost
-		for (Application appInfo : appList) {
-			if (!leasedAppList.contains(appInfo)) {
-				double appCPUDemand = appInfo.getApplication().getCPUDemand();
+		for (Application app : appList) {
+			if (!promisedApps.contains(app) && receivedApps.contains(app)) {
+				double appCPUDemand = app.getCPUDemand();
 				if (usedCPUUnits + appCPUDemand <= cpuUnits) {
-					retList.add(appInfo);
+					retList.add(app);
 					usedCPUUnits += appCPUDemand;
-				}
-				
-				if (smallestApp.getApplication().getCPUDemand() > appCPUDemand) {
-					smallestApp = appInfo;
 				}
 			}
 		}
 		
-		// i search to find apps of my own that are small enough to add in the
-		// list
-		for (ApplicationInfo appInfo : appList) {
-			if (!appInfo.appMoved() && !leasedAppList.contains(appInfo)) {
-				double appCPUDemand = appInfo.getApplication().getCPUDemand();
+		// if i can add more applications of my own I add them
+		for (Application app : appList) {
+			if (!promisedApps.contains(app) && !receivedApps.contains(app)) {
+				double appCPUDemand = app.getCPUDemand();
 				if (usedCPUUnits + appCPUDemand <= cpuUnits) {
-					retList.add(appInfo);
+					retList.add(app);
 					usedCPUUnits += appCPUDemand;
-				}
-				
-				if (smallestApp.getApplication().getCPUDemand() > appCPUDemand) {
-					smallestApp = appInfo;
 				}
 			}
 		}
 		
-		if (retList.isEmpty() && returnAtLeastSmallestApp && smallestApp.getApplication().getCPUDemand() != Integer.MAX_VALUE) {
+		if(usedCPUUnits < cpuUnits && returnExtraSmallestApp) {
+			
+		}
+		if (smallestApp.getApplication().getCPUDemand() > appCPUDemand) {
+			smallestApp = app;
+		}
+		
+		if (retList.isEmpty() && returnExtraSmallestApp && smallestApp.getApplication().getCPUDemand() != Integer.MAX_VALUE) {
 			retList.add(smallestApp);
 		}
 		
