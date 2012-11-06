@@ -3,7 +3,9 @@ package peersim.EP2400.resourcealloc.tasks.placementStartegy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
+import peersim.EP2400.resourcealloc.base.ApplicationsList;
 import peersim.EP2400.resourcealloc.tasks.util.AppCPUComparator;
 import peersim.EP2400.resourcealloc.tasks.util.ApplicationInfo;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal;
@@ -13,8 +15,7 @@ public class EnergyEfficientStrategy extends PlacementStrategy {
 	private static final double	CPU_USAGE_THRESHOLD	= 70;
 	
 	@Override
-	public synchronized Proposal getProposal(final List<ApplicationInfo> ownAppList, final List<ApplicationInfo> partnerAppList,
-		final List<ApplicationInfo> leasedAppList) {
+	public synchronized Proposal getProposal(final ApplicationsList ownAppList, final ApplicationsList partnerAppList, final Set<Integer> partnerReceivedApps) {
 		double ownCPUUsage = getCPUUsage(ownAppList);
 		double partnerCPUUsage = getCPUUsage(partnerAppList);
 		ProposalType pType;
