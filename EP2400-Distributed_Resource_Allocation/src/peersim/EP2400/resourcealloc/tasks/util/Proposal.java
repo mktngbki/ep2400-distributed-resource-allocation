@@ -4,7 +4,7 @@ import peersim.EP2400.resourcealloc.base.ApplicationsList;
 
 public class Proposal {
 	public enum ProposalType {
-		PUSH, PULL, BALANCE, NO_ACTION;
+		PUSH, PULL, OVELOADED_PUSH, NO_ACTION;
 	}
 	
 	private ProposalType		pType;
