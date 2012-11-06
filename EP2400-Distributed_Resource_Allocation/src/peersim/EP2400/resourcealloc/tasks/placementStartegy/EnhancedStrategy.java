@@ -1,17 +1,21 @@
 package peersim.EP2400.resourcealloc.tasks.placementStartegy;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 
 import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
-import peersim.EP2400.resourcealloc.tasks.util.AppCPUComparator;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal.ProposalType;
 
 public class EnhancedStrategy extends PlacementStrategy {
 	private static final double	CPU_USAGE_THRESHOLD	= 70;
+	
+	private double				CPUCapacity;
+	
+	public EnhancedStrategy(final double CPUCapacity) {
+		this.CPUCapacity = CPUCapacity;
+	}
 	
 	@Override
 	public synchronized Proposal getProposal(final ApplicationsList ownAppList, final ApplicationsList partnerAppList,
@@ -27,22 +31,18 @@ public class EnhancedStrategy extends PlacementStrategy {
 			if (ownCPUUsage < CPU_USAGE_THRESHOLD && partnerCPUUsage < CPU_USAGE_THRESHOLD) {
 				if (partnerCPUUsage > ownCPUUsage) {
 					pType = ProposalType.PUSH;
-					Collections.sort(ownAppList, new AppCPUComparator());
 					propAppList = getAppListToPropose(CPU_USAGE_THRESHOLD - partnerCPUUsage, ownAppList, ownReceivedApps, ownPromisedApps);
 				} else {
 					pType = ProposalType.PULL;
-					Collections.sort(partnerAppList, new AppCPUComparator());
 					propAppList = getAppListToPropose(CPU_USAGE_THRESHOLD - ownCPUUsage, partnerAppList, partnerReceivedApps, new HashSet<Integer>());
 				}
 			}
 			// Apply Load Balance Strategy if one of the nodes is overloaded (Maximize energy efficiency)
 			else if (ownCPUUsage > CPU_USAGE_THRESHOLD && partnerCPUUsage < CPU_USAGE_THRESHOLD) {
 				pType = ProposalType.PUSH;
-				Collections.sort(ownAppList, new AppCPUComparator());
 				propAppList = getAppListToPropose(ownCPUUsage - CPU_USAGE_THRESHOLD, ownAppList, ownReceivedApps, ownPromisedApps, true);
 			} else if (partnerCPUUsage > CPU_USAGE_THRESHOLD && ownCPUUsage < CPU_USAGE_THRESHOLD) {
 				pType = ProposalType.PULL;
-				Collections.sort(partnerAppList, new AppCPUComparator());
 				propAppList = getAppListToPropose(partnerCPUUsage - CPU_USAGE_THRESHOLD, partnerAppList, partnerReceivedApps, new HashSet<Integer>(), true);
 			}
 		}
@@ -50,11 +50,9 @@ public class EnhancedStrategy extends PlacementStrategy {
 		else {
 			if (ownCPUUsage > partnerCPUUsage) {
 				pType = ProposalType.OVERLOADED_PUSH;
-				Collections.sort(ownAppList, new AppCPUComparator());
 				propAppList = getAppListToPropose((ownCPUUsage - partnerCPUUsage) / 2, ownAppList, ownReceivedApps, ownPromisedApps);
 			} else {
 				pType = ProposalType.PULL;
-				Collections.sort(partnerAppList, new AppCPUComparator());
 				propAppList = getAppListToPropose((partnerCPUUsage - ownCPUUsage) / 2, partnerAppList, partnerReceivedApps, new HashSet<Integer>());
 			}
 		}
@@ -71,14 +69,19 @@ public class EnhancedStrategy extends PlacementStrategy {
 				if (ownAppList.totalCPUDemand() >= receivedProposal.getApplicationsList().totalCPUDemand()) {
 					acceptedProposal = receivedProposal;
 				} else {
-					ApplicationsList newAppSet = buildAppSetFromProposal(receivedProposal, new ApplicationsList());
-					acceptedProposal = new Proposal(receivedProposal.getProposalType(), newAppSet);
+					ApplicationsList newAppSetPush = buildAppSetFromProposal(receivedProposal, new HashSet<Integer>(), CPU_USAGE_THRESHOLD);
+					acceptedProposal = new Proposal(receivedProposal.getProposalType(), newAppSetPush);
 				}
 				break;
 			case PULL:
 				// Send Apps - Check that the Apps requested are still available
-				ApplicationsList newAppSet = buildAppSetFromProposal(receivedProposal, ownPromisedApps);
-				acceptedProposal = new Proposal(receivedProposal.getProposalType(), newAppSet);
+				ApplicationsList newAppSetPull = buildAppSetFromProposal(receivedProposal, ownPromisedApps, CPU_USAGE_THRESHOLD);
+				acceptedProposal = new Proposal(receivedProposal.getProposalType(), newAppSetPull);
+				break;
+			case OVERLOADED_PUSH:
+				// Receive Apps - Check that CPU Usage do not go over CPU Capacity
+				ApplicationsList newAppSetOverloadedPush = buildAppSetFromProposal(receivedProposal, ownPromisedApps, CPUCapacity);
+				acceptedProposal = new Proposal(receivedProposal.getProposalType(), newAppSetOverloadedPush);
 				break;
 			default:
 				// Unknown proposal type - Create a fake reply
@@ -93,18 +96,18 @@ public class EnhancedStrategy extends PlacementStrategy {
 		return acceptedProposal;
 	}
 	
-	private ApplicationsList buildAppSetFromProposal(final Proposal receivedProposal, final ApplicationsList leasedAppList) {
+	private ApplicationsList buildAppSetFromProposal(final Proposal receivedProposal, final Collection<Integer> ownPromisedApps, final double maxCPUUsage) {
 		ApplicationsList appList = new ApplicationsList();
 		double usedCPUUnits = 0;
 		for (Application app : receivedProposal.getApplicationsList()) {
-			if (!appInfo.appMoved() && !leasedAppList.contains(appInfo)) {
-				double appCPUDemand = appInfo.getApplication().getCPUDemand();
-				if (usedCPUUnits + appCPUDemand <= getTotalDemand()) {
-					appInfoList.add(appInfo);
+			if (!ownPromisedApps.contains(app)) {
+				double appCPUDemand = app.getCPUDemand();
+				if (usedCPUUnits + appCPUDemand <= maxCPUUsage) {
+					appList.add(app);
 					usedCPUUnits += appCPUDemand;
 				}
 			}
 		}
-		return appInfoList;
+		return appList;
 	}
 }
