@@ -22,14 +22,14 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 
 	public DistributedResourceAllocation(String prefix) {
 		super(prefix);
-		pStrategy = new EnhancedStrategy();
+		pStrategy = new EnhancedStrategy(cpuCapacity);
 		this.ownReceivedApps = Collections.synchronizedCollection(new HashSet<Integer>());
 		this.ownPromisedApps = Collections.synchronizedCollection(new HashSet<Integer>());
 	}
 
 	public DistributedResourceAllocation(String prefix, double cpu_capacity_value) {
 		super(prefix, cpu_capacity_value);
-		pStrategy = new EnhancedStrategy();
+		pStrategy = new EnhancedStrategy(cpuCapacity);
 		this.ownReceivedApps = Collections.synchronizedCollection(new HashSet<Integer>());
 		this.ownPromisedApps = Collections.synchronizedCollection(new HashSet<Integer>());
 	}
