@@ -1,16 +1,16 @@
 package peersim.EP2400.resourcealloc.tasks.placementStartegy;
 
-import java.util.Set;
+import java.util.Collection;
 
 import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal;
 
 public abstract class PlacementStrategy {
-	public abstract Proposal getProposal(final ApplicationsList ownAppList, final ApplicationsList partnerAppList, final Set<Integer> ownReceivedApps,
-		final Set<Integer> partnerReceivedApps, final Set<Integer> ownPromisedApps);
+	public abstract Proposal getProposal(final ApplicationsList ownAppList, final ApplicationsList partnerAppList, final Collection<Integer> ownReceivedApps,
+		final Collection<Integer> partnerReceivedApps, final Collection<Integer> ownPromisedApps);
 	
-	public synchronized Proposal processProposal(final Proposal receivedProposal, final ApplicationsList ownAppList, final Set<Integer> ownPromisedApps) {
+	public synchronized Proposal processProposal(final Proposal receivedProposal, final ApplicationsList ownAppList, final Collection<Integer> ownPromisedApps) {
 		// Override when required
 		return receivedProposal;
 	}
@@ -26,13 +26,13 @@ public abstract class PlacementStrategy {
 	*            not propose it to someone else
 	* @return
 	*/
-	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Set<Integer> promisedApps,
-		final Set<Integer> receivedApps) {
+	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Collection<Integer> promisedApps,
+		final Collection<Integer> receivedApps) {
 		return getAppListToPropose(cpuUnits, appList, promisedApps, receivedApps, false);
 	}
 	
-	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Set<Integer> promisedApps,
-		final Set<Integer> receivedApps, final boolean returnAtLeastSmallestApp) {
+	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Collection<Integer> promisedApps,
+		final Collection<Integer> receivedApps, final boolean returnAtLeastSmallestApp) {
 		double usedCPUUnits = 0;
 		ApplicationsList retList = new ApplicationsList();
 		ApplicationsList smallestApp = new ApplicationsList();
