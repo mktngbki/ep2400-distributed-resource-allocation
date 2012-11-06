@@ -1,7 +1,9 @@
 package peersim.EP2400.resourcealloc.tasks;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
@@ -17,16 +19,19 @@ import peersim.core.Linkable;
 import peersim.core.Node;
 
 public class DistributedResourceAllocation extends DistributedPlacementProtocol {
-	private List<ApplicationInfo>	tempLeasedApps;						//promised to give this apps to another node
 	private PlacementStrategy		pStrategy	= new EnhancedStrategy();
+	private Set<Integer> receivedApps; // apps that i receive so from the reconfiguration cost, i already paid 1 for it, so moving further does not cost us extra
+	private Set<Integer> promisedApps; //promised to give this apps to another node
 	
 	public DistributedResourceAllocation(String prefix) {
 		super(prefix);
+		this.receivedApps = new HashSet<Integer>();
 		tempLeasedApps = new ArrayList<ApplicationInfo>();
 	}
 	
 	public DistributedResourceAllocation(String prefix, double cpu_capacity_value) {
 		super(prefix, cpu_capacity_value);
+		this.receivedApps = new HashSet<Integer>();
 		tempLeasedApps = new ArrayList<ApplicationInfo>();
 	}
 	
@@ -51,9 +56,9 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		//
 		//		this.updatePlacement(A_n_prime);
 		
-		List<ApplicationInfo> ownAppList = buildAppInfoList(node, applicationsList());
+		//List<ApplicationInfo> ownAppList = buildAppInfoList(node, applicationsList());
 		
-		Proposal receivedProposal = n_prime.passiveThread_generateProposal(peer, ownAppList);
+		Proposal receivedProposal = n_prime.passiveThread_generateProposal(applicationsList(), receivedApps);
 		Proposal acceptedProposal = processProposal(receivedProposal);
 		n_prime.passiveThread_getAcceptedProposal(acceptedProposal);
 		
@@ -96,9 +101,8 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 	}
 	
 	//passive thread
-	public Proposal passiveThread_generateProposal(final Node node, final List<ApplicationInfo> ownAppList) {
-		List<ApplicationInfo> partnerAppList = buildAppInfoList(node, applicationsList());
-		return pStrategy.getProposal(ownAppList, partnerAppList, tempLeasedApps);
+	public Proposal passiveThread_generateProposal(final ApplicationsList partenerAppList, final Set<Integer> partnerReceivedApps) {
+		return pStrategy.getProposal(applicationsList(), partnerAppList, partnerReceivedApps, promisedApps);
 	}
 	
 	public void passiveThread_getAcceptedProposal(Proposal acceptedProposal) {
@@ -153,14 +157,6 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 	{
 		// TODO: Implement your code for task 2 here.
 		
-	}
-	
-	private List<ApplicationInfo> buildAppInfoList(Node node, ApplicationsList applicationsList) {
-		List<ApplicationInfo> appInfoList = new ArrayList<ApplicationInfo>();
-		for (Application app : applicationsList) {
-			appInfoList.add(new ApplicationInfo(app, node));
-		}
-		return appInfoList;
 	}
 	
 	private List<ApplicationInfo> buildAppSetFromProposal(final Proposal receivedProposal, final List<ApplicationInfo> leasedAppList) {
