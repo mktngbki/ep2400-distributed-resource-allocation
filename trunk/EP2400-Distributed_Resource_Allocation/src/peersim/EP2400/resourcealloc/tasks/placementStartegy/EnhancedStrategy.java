@@ -23,7 +23,7 @@ public class EnhancedStrategy extends PlacementStrategy {
 		double ownCPUUsage = ownAppList.totalCPUDemand();
 		double partnerCPUUsage = partnerAppList.totalCPUDemand();
 		ProposalType pType = null;
-		ApplicationsList propAppList = null;
+		ApplicationsList propAppList = new ApplicationsList();
 		
 		//Apply Energy Efficient Strategy if the sum of the CPU Usage of both nodes is below threshold * 2
 		if (ownCPUUsage + partnerCPUUsage <= CPU_USAGE_THRESHOLD * 2) {

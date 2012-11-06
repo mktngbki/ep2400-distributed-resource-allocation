@@ -18,7 +18,7 @@ public class EnergyEfficientStrategy extends PlacementStrategy {
 		double ownCPUUsage = ownAppList.totalCPUDemand();
 		double partnerCPUUsage = partnerAppList.totalCPUDemand();
 		ProposalType pType = null;
-		ApplicationsList propAppList = null;
+		ApplicationsList propAppList = new ApplicationsList();
 		
 		double maxCPUUsage = Math.max(ownCPUUsage, partnerCPUUsage);
 		
@@ -32,7 +32,6 @@ public class EnergyEfficientStrategy extends PlacementStrategy {
 			propAppList = getAppListToPropose(CPU_USAGE_THRESHOLD - ownCPUUsage, partnerAppList, partnerReceivedApps, new HashSet<Integer>());
 		} else {
 			pType = ProposalType.NO_ACTION;
-			propAppList = new ApplicationsList();
 		}
 		
 		return new Proposal(pType, propAppList);
