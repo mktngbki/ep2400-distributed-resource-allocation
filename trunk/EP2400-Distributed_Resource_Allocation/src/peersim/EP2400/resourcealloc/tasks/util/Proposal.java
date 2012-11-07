@@ -28,7 +28,10 @@ public class Proposal {
 			return new Proposal(ProposalType.PULL, appList);
 		} else if (pType == ProposalType.PULL) {
 			return new Proposal(ProposalType.PUSH, appList);
-		} else { //else if(pType == ProposalType.OVELOADED_PUSH) {
+		} else if (pType == ProposalType.NO_ACTION) {
+			return new Proposal(ProposalType.NO_ACTION, appList);
+		}
+		else { //else if(pType == ProposalType.OVELOADED_PUSH) {
 			return new Proposal(ProposalType.PULL, appList);
 		}
 	}
