@@ -80,6 +80,7 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 					throw new RuntimeException();
 				}
 				deallocateApplication(app);
+				ownReceivedApps.remove(app.getID());
 				ownPromisedApps.remove(app.getID());
 			}
 			break;
@@ -98,6 +99,12 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 			// Unknown proposal type - No action needs to be performed
 			break;
 		}
+	}
+	
+	public int getReconfigCost() {
+		int reconfigCost = ownReceivedApps.size();
+		ownReceivedApps = new HashSet<Integer>();
+		return reconfigCost;
 	}
 
 	@Override
