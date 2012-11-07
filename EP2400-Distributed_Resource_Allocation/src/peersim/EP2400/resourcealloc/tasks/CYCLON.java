@@ -9,10 +9,7 @@ package peersim.EP2400.resourcealloc.tasks;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import peersim.cdsim.CDProtocol;
 import peersim.config.Configuration;
@@ -48,18 +45,18 @@ public class CYCLON implements CDProtocol, Linkable
 			age++;
 		}
 
-		//we need to check a lot of times if an entry of a certain node is contained in a list
-		//so we do equality of Entry only based on nodes
-
 		@Override
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			//TODO Alex - can i used the node hashCode method here?
+			//TODO Alex - can i use the node hashCode method here?
 			result = prime * result + (int) (node.getID() ^ (node.getID() >>> 32)); 
 			return result;
 		}
 
+
+		//we need to check a lot of times if an entry of a certain node is contained in a list
+		//so we do equality of Entry only based on comparison of nodes
 		@Override
 		public boolean equals(Object obj) {
 			if (this == obj)
@@ -81,7 +78,6 @@ public class CYCLON implements CDProtocol, Linkable
 			if (!(otherEntry instanceof Entry)) {
 				throw new ClassCastException("It has been detected the presence of an invalid object!");
 			}
-
 			int age = ((Entry) otherEntry).getAge();
 
 			if (getAge() > age) {
@@ -118,7 +114,7 @@ public class CYCLON implements CDProtocol, Linkable
 		this.prefix = prefix;
 		cacheSize = Configuration.getInt(prefix + "." + PAR_CACHE);
 		shuffleLength = Configuration.getInt(prefix + "." + PAR_SHUFFLE_LENGTH);
-		entries = Collections.synchronizedList(new ArrayList<Entry>(cacheSize));
+		entries = new ArrayList<Entry>(cacheSize);
 	}
 
 	public CYCLON(String prefix, int cacheSize, int shuffleLength)
@@ -126,7 +122,7 @@ public class CYCLON implements CDProtocol, Linkable
 		this.prefix = prefix;
 		this.cacheSize = cacheSize;
 		this.shuffleLength = shuffleLength;
-		this.entries = Collections.synchronizedList(new ArrayList<Entry>(cacheSize));
+		this.entries = new ArrayList<Entry>(cacheSize);
 	}
 
 	// ---------------------------------------------------------------------
@@ -217,96 +213,74 @@ public class CYCLON implements CDProtocol, Linkable
 		}
 
 		//Step 2.2 get nodes for shuffle - It is used shuffleLength - 1 since the node puts its reference in the next step
-		HashSet<Entry> shuffleList = new HashSet<Entry>();
+		ArrayList<Entry> shuffleList = new ArrayList<Entry>();
 		if (!entries.isEmpty()) {
 			shuffleList = getShuffleNodes(shuffleLength - 1);
 		}
 
 		//Step 3 adding self with timestamp 0 in the list
 		shuffleList.add(new Entry(n, 0));
-		Set<Entry> sentShuffleList = (Set<Entry>)shuffleList.clone();
+		@SuppressWarnings("unchecked")
+		List<Entry> sentShuffleList = (List<Entry>)shuffleList.clone();
 		//Step 4 and 5 send and receive a set of peers
 		CYCLON neighborCyclon = (CYCLON) oldestNode.getProtocol(protocolID);
-		Set<Entry> receivedShuffleList = neighborCyclon.shuffle(oldestNode, sentShuffleList);
+		List<Entry> receivedShuffleList = neighborCyclon.shuffle(oldestNode, sentShuffleList);
 
 		//Step 6 and 7 update entries list
 		mergeNeighborLists(n, receivedShuffleList, shuffleList);
 	}
-
+	
 	/*
 	 * CYCLON passive thread method
 	 */
-	public Set<Entry> shuffle(Node destination, Set<Entry> recShuffleList) {
+	public List<Entry> shuffle(Node destination, List<Entry> recShuffleList) {
 		//get shuffle response
-		HashSet<Entry> shuffleList = getShuffleNodes(shuffleLength);
+		ArrayList<Entry> shuffleList = getShuffleNodes(shuffleLength);
 		//clone list that we send because we modify this list in the merge
-		Set<Entry> sentShuffleList = (Set<Entry>)shuffleList.clone();
+		@SuppressWarnings("unchecked")
+		List<Entry> sentShuffleList = (List<Entry>)shuffleList.clone();
 		//merge received shuffleList with own list
 		mergeNeighborLists(destination, recShuffleList, shuffleList);
 		return sentShuffleList;
 	}
 
-	/*
-	 * synchronized on entries to make sure that entries is in a consistent state
-	 * meaning that another thread is not deleting or adding nodes at this time
-	 */
-	private HashSet<Entry> getShuffleNodes(int nrOfNodes) {
-		HashSet<Entry> shuffleNodes = new HashSet<Entry>();
-		synchronized(entries) {
-			int entriesSize = entries.size();
-			if(entriesSize < nrOfNodes) {
-				shuffleNodes.addAll(entries);
-			} else {
-				while(shuffleNodes.size() < nrOfNodes) {
-					int nodeIndex = CommonState.r.nextInt(entriesSize);
-					shuffleNodes.add(entries.get(nodeIndex));
+	private ArrayList<Entry> getShuffleNodes(int nrOfNodes) {
+		ArrayList<Entry> shuffleNodes = new ArrayList<Entry>();
+		int entriesSize = entries.size();
+		if(entriesSize < nrOfNodes) {
+			shuffleNodes.addAll(entries);
+		} else {
+			while(shuffleNodes.size() < nrOfNodes) {
+				int nodeIndex = CommonState.r.nextInt(entriesSize);
+				Entry e = entries.get(nodeIndex);
+				if(!shuffleNodes.contains(e)) {
+					shuffleNodes.add(e);
 				}
 			}
 		}
 		return shuffleNodes;
 	}
 
-	public void mergeNeighborLists(Node self, Set<Entry> receivedNodes, Set<Entry> sentNodes) {
-		Iterator<Entry> iterator;
-
+	public void mergeNeighborLists(Node self, List<Entry> receivedNodes, List<Entry> sentNodes) {
 		//Discard from receivedNodes the following entries:
 		//1. entries pointing at self
 		//2. entries that you already have - not sure if should remove the entry from received or the oldest entry
-		//for(Entry e : receivedNodes) { ... receivedNodes.remove..} throws ConcurrentModeificationException
-		//		iterator = receivedNodes.iterator();
-		//		while (iterator.hasNext()) {
-		//		    Entry e = iterator.next();
-		//		    if (e.getNode().getID() == self.getID()) {
-		//		        iterator.remove();
-		//		    }
-		//		    if()
-		//		}		
-
 		//our Entry equals does the equal method only on node not on age. so we consider entries of different age on same node as beeing equal
-		receivedNodes.remove(new Entry(self, 0));
+		List<Entry> l = new ArrayList<Entry>();
+		l.add(new Entry(self, 0));
+		receivedNodes.removeAll(l);
 		receivedNodes.removeAll(entries);
 
 		//To be safe - Double check that entries does not contain self
 		//since i make sure that what i add(receivedNodes) does not contain self
 		//I could remove this if I know for sure that the initialization of this list does not contain self
-		//		synchronized(entries) {
-		//			iterator = entries.iterator();
-		//			while (iterator.hasNext()) {
-		//			    Entry e = iterator.next();
-		//			    if (e.getNode().getID() == self.getID()) {
-		//			        iterator.remove();
-		//			    }
-		//			}	
-		//		}
-		entries.remove(new Entry(self, 0));
+		entries.remove(l);
 
 		//Reduce entries list size by removing random nodes that were sent to the other node
 		entries.addAll(receivedNodes);
-		List<Entry> sentNodesList = new ArrayList<Entry>(sentNodes);
-		System.out.println(sentNodes.size() + " " + entries.size());
 		while (entries.size() > cacheSize) {
 			int index = CommonState.r.nextInt(sentNodes.size());
-			Entry removedEntry = sentNodesList.remove(index);
+			Entry removedEntry = sentNodes.remove(index);
 			entries.remove(removedEntry);
 		}
 	}
@@ -324,7 +298,8 @@ public class CYCLON implements CDProtocol, Linkable
 			if (entries.isEmpty()) {
 				return null;
 			}
-			
+
+			Collections.sort(entries);
 			int lastIndex = entries.size() - 1;
 			oldestNode = entries.get(lastIndex).getNode();
 

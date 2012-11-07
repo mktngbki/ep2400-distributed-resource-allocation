@@ -1,8 +1,8 @@
 package peersim.EP2400.resourcealloc.tasks.placementStartegy;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
 import peersim.EP2400.resourcealloc.tasks.util.AppCPUComparator;
@@ -14,7 +14,7 @@ public class EnergyEfficientStrategy extends PlacementStrategy {
 	
 	@Override
 	public synchronized Proposal getProposal(final ApplicationsList ownAppList, final ApplicationsList partnerAppList,
-		final Collection<Integer> ownReceivedApps, final Collection<Integer> partnerReceivedApps, final Collection<Integer> ownPromisedApps) {
+		final Set<Integer> ownReceivedApps, final Set<Integer> partnerReceivedApps, final Set<Integer> ownPromisedApps) {
 		double ownCPUUsage = ownAppList.totalCPUDemand();
 		double partnerCPUUsage = partnerAppList.totalCPUDemand();
 		ProposalType pType = null;
