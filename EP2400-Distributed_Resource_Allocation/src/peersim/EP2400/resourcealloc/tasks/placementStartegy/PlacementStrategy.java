@@ -28,13 +28,13 @@ public abstract class PlacementStrategy {
 	*            not propose it to someone else
 	* @return
 	*/
-	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Set<Integer> receivedApps, 
-			final Set<Integer> promisedApps) {
+	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Set<Integer> receivedApps,
+		final Set<Integer> promisedApps) {
 		return getAppListToPropose(cpuUnits, appList, promisedApps, receivedApps, false);
 	}
 	
-	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Set<Integer> receivedApps, 
-			final Set<Integer> promisedApps, final boolean returnExtraSmallestApp) {
+	protected ApplicationsList getAppListToPropose(final double cpuUnits, final ApplicationsList appList, final Set<Integer> receivedApps,
+		final Set<Integer> promisedApps, final boolean returnExtraSmallestApp) {
 		double usedCPUUnits = 0;
 		ApplicationsList retList = new ApplicationsList();
 		
@@ -52,7 +52,7 @@ public abstract class PlacementStrategy {
 				}
 			}
 		}
-
+		
 		// if i can add more applications of my own I add them
 		for (Application app : appList) {
 			if (!promisedApps.contains(app) && !receivedApps.contains(app)) {
@@ -61,18 +61,18 @@ public abstract class PlacementStrategy {
 					retList.add(app);
 					promisedApps.add(app.getID());
 					usedCPUUnits += appCPUDemand;
-				} 
+				}
 			}
 		}
 		
-		for(Application app : appList) {
-			if(!promisedApps.contains(app)) {
+		for (Application app : appList) {
+			if (!promisedApps.contains(app.getID())) {
 				smallestNotPromisedApp = app;
 			}
 		}
 		
-		if(usedCPUUnits < cpuUnits && returnExtraSmallestApp && null != smallestNotPromisedApp) {
-			if(!promisedApps.contains(smallestNotPromisedApp)) {
+		if (usedCPUUnits < cpuUnits && returnExtraSmallestApp && null != smallestNotPromisedApp) {
+			if (!promisedApps.contains(smallestNotPromisedApp)) {
 				retList.add(smallestNotPromisedApp);
 				promisedApps.add(smallestNotPromisedApp.getID());
 			}
