@@ -9,7 +9,6 @@ import peersim.EP2400.resourcealloc.base.DistributedPlacementProtocol;
 import peersim.EP2400.resourcealloc.tasks.placementStartegy.EnhancedStrategy;
 import peersim.EP2400.resourcealloc.tasks.placementStartegy.PlacementStrategy;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal;
-import peersim.EP2400.resourcealloc.tasks.util.Proposal.ProposalType;
 import peersim.config.FastConfig;
 import peersim.core.CommonState;
 import peersim.core.Linkable;
@@ -54,29 +53,29 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		Proposal acceptedProposal = pStrategy.processProposal(receivedProposal, ownApplicationList, ownPromisedApps);
 		n_prime.passiveThread_getAcceptedProposal(receivedProposal, acceptedProposal);
 		
-		if (54 == peer.getID()) {
-			System.out.println("PASSIVE!");
-			System.out.println("ownApplicationList: " + ownApplicationList.totalCPUDemand());
-			
-			System.out.println("receivedProposal: " + receivedProposal.getProposalType() + " - size: "
-				+ receivedProposal.getApplicationsList().totalCPUDemand());
-			if (!acceptedProposal.getProposalType().equals(ProposalType.NO_ACTION)) {
-				System.out.println("acceptedProposal: " + acceptedProposal.getProposalType() + " - size: "
-					+ acceptedProposal.getApplicationsList().totalCPUDemand());
-			}
-		}
-		
-		if (54 == node.getID()) {
-			System.out.println("ACTIVE!");
-			System.out.println("ownApplicationList: " + ownApplicationList.totalCPUDemand());
-			
-			System.out.println("receivedProposal: " + receivedProposal.getProposalType() + " - size: "
-				+ receivedProposal.getApplicationsList().totalCPUDemand());
-			if (!acceptedProposal.getProposalType().equals(ProposalType.NO_ACTION)) {
-				System.out.println("acceptedProposal: " + acceptedProposal.getProposalType() + " - size: "
-					+ acceptedProposal.getApplicationsList().totalCPUDemand());
-			}
-		}
+//		if (54 == peer.getID()) {
+//			System.out.println("PASSIVE!");
+//			System.out.println("ownApplicationList: " + ownApplicationList.totalCPUDemand());
+//			
+//			System.out.println("receivedProposal: " + receivedProposal.getProposalType() + " - size: "
+//				+ receivedProposal.getApplicationsList().totalCPUDemand());
+//			if (!acceptedProposal.getProposalType().equals(ProposalType.NO_ACTION)) {
+//				System.out.println("acceptedProposal: " + acceptedProposal.getProposalType() + " - size: "
+//					+ acceptedProposal.getApplicationsList().totalCPUDemand());
+//			}
+//		}
+//		
+//		if (54 == node.getID()) {
+//			System.out.println("ACTIVE!");
+//			System.out.println("ownApplicationList: " + ownApplicationList.totalCPUDemand());
+//			
+//			System.out.println("receivedProposal: " + receivedProposal.getProposalType() + " - size: "
+//				+ receivedProposal.getApplicationsList().totalCPUDemand());
+//			if (!acceptedProposal.getProposalType().equals(ProposalType.NO_ACTION)) {
+//				System.out.println("acceptedProposal: " + acceptedProposal.getProposalType() + " - size: "
+//					+ acceptedProposal.getApplicationsList().totalCPUDemand());
+//			}
+//		}
 		
 		// Since the type of Proposal is according to the passive Node we need to switch it in order to perform the correct updatePlacement
 		// A PUSH proposal for the passive Node is a PULL proposal for the active one
