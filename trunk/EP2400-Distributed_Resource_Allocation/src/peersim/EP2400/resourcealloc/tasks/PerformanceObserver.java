@@ -60,9 +60,10 @@ public class PerformanceObserver implements Control {
 		protocolID = Configuration.getPid(prefix + "." + PAR_PROT);
 		r_max = Configuration.getInt(prefix + "." + PAR_R_MAX);
 		appsCount = Configuration.getInt(prefix + "." + PAR_APPSCOUNT);
-		FileIO.append("N,V,S,R\n", "cycles.csv");
-		FileIO.append("N,V,S,R,C\n", "epochs.csv");
-		FileIO.append("N,V,OptimumActive,ActiveOverloaded,Underloaded\n", "auxEpochs.csv");
+		//TODO change separator from ; to ,
+		FileIO.append("N;V;S;R\n", "cycles.csv");
+		FileIO.append("N;V;S;R;C\n", "epochs.csv");
+		FileIO.append("N;V;OptimumTheoritical;Active;Overloaded;Loaded;Underloaded;OptimumThresholdActive\n", "auxEpochs.csv");
 	}
 
 	protected final static int	SERVER_COUNT	= 10000;
@@ -73,8 +74,6 @@ public class PerformanceObserver implements Control {
 	public boolean execute() {
 		j++;
 		
-		int overloadedServers = 0; //fraction of nodes over omega(cpu capacity)
-		int fTau = 0; //fraction of nodes over tau(cpu threshold)
 		ArrayList<Double> cpuDemandList = new ArrayList<Double>(SERVER_COUNT);
 
 		String cycleResult = "";
@@ -83,16 +82,20 @@ public class PerformanceObserver implements Control {
 
 
 		int cpuCapacity = 100;
-		int tau = 70;
+		int tau = 80;
 
 		double totalCPUDemand = ApplicationsManager.getInstance().applications().totalCPUDemand();
 		double average =  totalCPUDemand / SERVER_COUNT;
 		double realAverage = 0;
 		double var1 = 0;
 		double var2 = 0;
-		int activeServers = 0;
-		int underloadedServers = 0;
 		int totalReconfigCost = 0;
+		
+		int activeServers = 0;
+		int overloadedServers = 0; //fraction of nodes over omega(cpu capacity)
+		int loadedServers = 0; //fraction of nodes over tau(cpu threshold)
+		int optimumThresholdActive = 0;
+		int underloadedServers = 0;
 		
 		for(int i = 0; i < SERVER_COUNT; i++) {
 			Node peer = Network.get(i);
@@ -102,14 +105,17 @@ public class PerformanceObserver implements Control {
 			if(cpuDemand != 0) {
 				activeServers++;
 			}
-			if(0 != cpuDemand && cpuDemand <= 40) {
+			if(0 != cpuDemand && cpuDemand <= tau/2) {
 				underloadedServers++;
+			}
+			if((tau-2) < cpuDemand && cpuDemand <= tau) {
+				optimumThresholdActive++;
 			}
 			if(cpuDemand > cpuCapacity) {
 				overloadedServers++;
 			}
 			if(cpuDemand > tau) { //servers with cpuDemand over tau
-				fTau++;
+				loadedServers++;
 			}
 			if(29 == j%30) {
 				DistributedResourceAllocation p2 = (DistributedResourceAllocation)p;
@@ -144,8 +150,6 @@ public class PerformanceObserver implements Control {
 		cycleResult += "\n";
 		FileIO.append(cycleResult, "cycles.csv");
 
-		auxResult += (float)fTau/SERVER_COUNT + SEPARATOR +   underloadedServers;
-
 		if(0 == j%30 || 29 == j%30) {
 			System.out.println("total CPU demand " + totalCPUDemand);
 			
@@ -174,17 +178,21 @@ public class PerformanceObserver implements Control {
 			auxResult += j/30;
 			//V
 			auxResult += SEPARATOR + var1;
-			//Optimum active servers
+			//Optimum theoritical active servers
 			auxResult += SEPARATOR + totalCPUDemand/tau;
 			//Active servers
 			auxResult += SEPARATOR + activeServers;
-			//Overloaded servers
+			//Overloaded servers - over cpu capacity
 			auxResult += SEPARATOR + overloadedServers;
-			//Underloaded servers
+			//Loaded servers - over tau capacity
+			auxResult += SEPARATOR + loadedServers;
+			//Underloaded servers - bellow tau/2
 			auxResult += SEPARATOR + underloadedServers;
+			//Active servers with optimum load - in (tau-2,tau]
+			auxResult += SEPARATOR + optimumThresholdActive;
 			
 			auxResult += "\n";
-			FileIO.append(auxResult, "auxEpoch.csv");
+			FileIO.append(auxResult, "auxEpochs.csv");
 		}
 
 		//		j++;
