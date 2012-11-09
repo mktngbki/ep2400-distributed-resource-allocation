@@ -139,7 +139,6 @@ public class PerformanceObserver implements Control {
 		
 		//standard deviation
 		var1 = Math.sqrt(var1 / SERVER_COUNT);
-		
 		//variation coefficient
 		var1 = var1 / average;
 		
@@ -182,7 +181,7 @@ public class PerformanceObserver implements Control {
 			//NrOfCycles
 			auxResult += j / 30;
 			//V
-			auxResult += SEPARATOR + var1;
+			auxResult += SEPARATOR + var2;
 			//Optimum theoritical active servers
 			auxResult += SEPARATOR + totalCPUDemand / tau;
 			//Active servers
