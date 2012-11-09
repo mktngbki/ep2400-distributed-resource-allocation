@@ -13,41 +13,41 @@ import peersim.core.Network;
 import peersim.core.Node;
 
 public class PerformanceObserver implements Control {
-
-	private static final String SEPARATOR = ";";
-
+	
+	private static final String	SEPARATOR		= ";";
+	
 	/**
 	 * The protocol to operate on.
 	 * 
 	 * @config
 	 */
 	private static final String	PAR_PROT		= "protocol";
-
+	
 	/**
 	 * The number of applications
 	 * 
 	 * @config
 	 */
 	private static final String	PAR_APPSCOUNT	= "apps_count";
-
+	
 	private static final String	PAR_R_MAX		= "r_max";
-
+	
 	/** Protocol identifier, obtained from config property {@link #PAR_PROT}. */
 	private final int			protocolID;
-
+	
 	private final String		prefix;
-
+	
 	/**
 	 * Constant r_max in the simulation
 	 */
 	private final int			r_max;
-
+	
 	/**
 	 * Number of application
 	 */
 	protected int				appsCount;
-
-
+	
+	
 	/**
 	 * Standard constructor that reads the configuration parameters. Invoked by
 	 * the simulation engine.
@@ -65,27 +65,31 @@ public class PerformanceObserver implements Control {
 		FileIO.append("N;V;S;R;C\n", "epochs.csv");
 		FileIO.append("N;V;OptimumTheoritical;Active;Overloaded;Loaded;Underloaded;OptimumThresholdActive\n", "auxEpochs.csv");
 	}
-
+	
 	protected final static int	SERVER_COUNT	= 10000;
 	int							j				= -1;
 	Set<Integer>				overloaded		= new HashSet<Integer>();
-
+	
+	
+	/**
+	 * This method applies for Task 2.3
+	 */
 	@Override
 	public boolean execute() {
 		j++;
 		
 		ArrayList<Double> cpuDemandList = new ArrayList<Double>(SERVER_COUNT);
-
+		
 		String cycleResult = "";
 		String epochResult = "";
 		String auxResult = "";
-
-
+		
+		
 		int cpuCapacity = 100;
 		int tau = 80;
-
+		
 		double totalCPUDemand = ApplicationsManager.getInstance().applications().totalCPUDemand();
-		double average =  totalCPUDemand / SERVER_COUNT;
+		double average = totalCPUDemand / SERVER_COUNT;
 		double realAverage = 0;
 		double var1 = 0;
 		double var2 = 0;
@@ -97,89 +101,89 @@ public class PerformanceObserver implements Control {
 		int optimumThresholdActive = 0;
 		int underloadedServers = 0;
 		
-		for(int i = 0; i < SERVER_COUNT; i++) {
+		for (int i = 0; i < SERVER_COUNT; i++) {
 			Node peer = Network.get(i);
 			DistributedPlacementProtocol p = ((DistributedPlacementProtocol) peer.getProtocol(protocolID));
 			double cpuDemand = p.getTotalDemand();
 			cpuDemandList.add(cpuDemand);
-			if(cpuDemand != 0) {
+			if (cpuDemand != 0) {
 				activeServers++;
 			}
-			if(0 != cpuDemand && cpuDemand <= tau/2) {
+			if (0 != cpuDemand && cpuDemand <= tau / 2) {
 				underloadedServers++;
 			}
-			if((tau-2) < cpuDemand && cpuDemand <= tau) {
+			if ((tau - 2) < cpuDemand && cpuDemand <= tau) {
 				optimumThresholdActive++;
 			}
-			if(cpuDemand > cpuCapacity) {
+			if (cpuDemand > cpuCapacity) {
 				overloadedServers++;
 			}
-			if(cpuDemand > tau) { //servers with cpuDemand over tau
+			if (cpuDemand > tau) { //servers with cpuDemand over tau
 				loadedServers++;
 			}
-			if(29 == j%30) {
-				DistributedResourceAllocation p2 = (DistributedResourceAllocation)p;
+			if (29 == j % 30) {
+				DistributedResourceAllocation p2 = (DistributedResourceAllocation) p;
 				totalReconfigCost += p2.getReconfigCost();
 			}
 		}
-
+		
 		realAverage = totalCPUDemand / activeServers;
-
-		for(Double cpuDemand : cpuDemandList) {
+		
+		for (Double cpuDemand : cpuDemandList) {
 			var1 += Math.pow(cpuDemand - average, 2);
-			if(cpuDemand != 0) {
+			if (cpuDemand != 0) {
 				var2 += Math.pow(cpuDemand - realAverage, 2);
 			}
-		}	
-
+		}
+		
 		//standard deviation
-		var1 = Math.sqrt(var1/SERVER_COUNT);
-
+		var1 = Math.sqrt(var1 / SERVER_COUNT);
+		
 		//variation coefficient
 		var1 = var1 / average;
-
+		
 		//NrOfCycles
 		cycleResult += j;
 		//V - variation
 		cycleResult += SEPARATOR + var1;
 		//S - overloaded servers
-		cycleResult += SEPARATOR + (float)overloadedServers/SERVER_COUNT;
+		cycleResult += SEPARATOR + (float) overloadedServers / SERVER_COUNT;
 		//R - active servers
-		cycleResult += SEPARATOR + (float)activeServers/SERVER_COUNT;
-
+		cycleResult += SEPARATOR + (float) activeServers / SERVER_COUNT;
+		
 		cycleResult += "\n";
 		FileIO.append(cycleResult, "cycles.csv");
-
-		if(0 == j%30 || 29 == j%30) {
+		
+		if (0 == j % 30 || 29 == j % 30) {
 			System.out.println("total CPU demand " + totalCPUDemand);
 			
 		}
-		if(29 == j%30) {
+		if (29 == j % 30) {
 			//NrOfCycles
-			epochResult += j/30;
+			epochResult += j / 30;
 			//V - variation
 			epochResult += SEPARATOR + var1;
 			//S - overloaded servers
-			epochResult += SEPARATOR + (float)overloadedServers/SERVER_COUNT;
+			epochResult += SEPARATOR + (float) overloadedServers / SERVER_COUNT;
 			//R - active servers
-			epochResult += SEPARATOR + (float)activeServers/SERVER_COUNT;
+			epochResult += SEPARATOR + (float) activeServers / SERVER_COUNT;
 			//C - cost of reconfiguration
 			epochResult += SEPARATOR + totalReconfigCost;
 			
 			epochResult += "\n";
 			FileIO.append(epochResult, "epochs.csv");
-
+			
 			//standard deviation
-			var2 = Math.sqrt(var2/activeServers);
+			var2 = Math.sqrt(var2 / activeServers);
 			//variation coefficient
 			var2 = var2 / realAverage;
 			
 			//NrOfCycles
-			auxResult += j/30;
+			auxResult += j / 30;
 			//V
 			auxResult += SEPARATOR + var1;
 			//Optimum theoritical active servers
-			auxResult += SEPARATOR + totalCPUDemand/tau;
+			auxResult += SEPARATOR + totalCPUDemand / tau;
 			//Active servers
 			auxResult += SEPARATOR + activeServers;
 			//Overloaded servers - over cpu capacity
@@ -194,45 +198,137 @@ public class PerformanceObserver implements Control {
 			auxResult += "\n";
 			FileIO.append(auxResult, "auxEpochs.csv");
 		}
-
-		//		j++;
-		//		System.out.println("OBSERVER");
-		//		
-		//		int i=54;
-		//		Node peer = Network.get(i);
-		//		DistributedPlacementProtocol p = ((DistributedPlacementProtocol) peer.getProtocol(protocolID));
-		//			System.err.println(i + " " + peer.getID() + " " + p.getTotalDemand());
-
-		//		long totalReconfigCost = 0;
-		//		if (j % 30 == 0) {
-		//			System.out.println(appsCount);
-		//			for (int i = 0; i < SERVER_COUNT; i++) {
-		//				DistributedResourceAllocation p = ((DistributedResourceAllocation) Network.get(i).getProtocol(protocolID));
-		//
-		//				totalReconfigCost += p.getReconfigCost();
-		//			}
-		//			System.out.println(totalReconfigCost);
-		//		}
-		//				System.out.println("______________");
-		//		
-		//		if((j == 30)) {
-		//			for(int i = 0; i < SERVER_COUNT; i++) {
-		//				Node peer = Network.get(i);
-		//				DistributedPlacementProtocol p = ((DistributedPlacementProtocol) peer.getProtocol(protocolID));
-		//				if(p.getTotalDemand() > p.getCpuCapacity()) {
-		//					System.err.println("overloaded");
-		//					System.err.println(i + " " + peer.getID() + " " + p.getTotalDemand());
-		//					overloaded.add(i);
-		//				}
-		//				if(overloaded.contains(i)) {
-		//					System.out.println(i + " " + p.getTotalDemand());
-		//				}
-		//			if(p.getTotalDemand() != 0&& j ==40) {
-		//				System.out.println(i + " " + p.getTotalDemand());
-		//			}
-		//			}
-		//		}
 		return false;
 	}
-
+	
+	
+	/**
+	 * This method applies for Task 2.5
+	 */
+	//	@Override
+	//	public boolean execute() {
+	//		j++;
+	//		
+	//		ArrayList<Double> cpuDemandList = new ArrayList<Double>(SERVER_COUNT);
+	//
+	//		String cycleResult = "";
+	//		String epochResult = "";
+	//		String auxResult = "";
+	//
+	//
+	//		int cpuCapacity = 100;
+	//		int tau = 80;
+	//
+	//		double totalCPUDemand = ApplicationsManager.getInstance().applications().totalCPUDemand();
+	//		double average =  totalCPUDemand / SERVER_COUNT;
+	//		double realAverage = 0;
+	//		double var1 = 0;
+	//		double var2 = 0;
+	//		int totalReconfigCost = 0;
+	//		
+	//		int activeServers = 0;
+	//		int overloadedServers = 0; //fraction of nodes over omega(cpu capacity)
+	//		int loadedServers = 0; //fraction of nodes over tau(cpu threshold)
+	//		int optimumThresholdActive = 0;
+	//		int underloadedServers = 0;
+	//		
+	//		for(int i = 0; i < SERVER_COUNT; i++) {
+	//			Node peer = Network.get(i);
+	//			DistributedPlacementProtocol p = ((DistributedPlacementProtocol) peer.getProtocol(protocolID));
+	//			double cpuDemand = p.getTotalDemand();
+	//			cpuDemandList.add(cpuDemand);
+	//			if(cpuDemand != 0) {
+	//				activeServers++;
+	//			}
+	//			if(0 != cpuDemand && cpuDemand <= tau/2) {
+	//				underloadedServers++;
+	//			}
+	//			if((tau-2) < cpuDemand && cpuDemand <= tau) {
+	//				optimumThresholdActive++;
+	//			}
+	//			if(cpuDemand > cpuCapacity) {
+	//				overloadedServers++;
+	//			}
+	//			if(cpuDemand > tau) { //servers with cpuDemand over tau
+	//				loadedServers++;
+	//			}
+	//			if(29 == j%30) {
+	//				DistributedResourceAllocation p2 = (DistributedResourceAllocation)p;
+	//				totalReconfigCost += p2.getReconfigCost();
+	//			}
+	//		}
+	//
+	//		realAverage = totalCPUDemand / activeServers;
+	//
+	//		for(Double cpuDemand : cpuDemandList) {
+	//			var1 += Math.pow(cpuDemand - average, 2);
+	//			if(cpuDemand != 0) {
+	//				var2 += Math.pow(cpuDemand - realAverage, 2);
+	//			}
+	//		}	
+	//
+	//		//standard deviation
+	//		var1 = Math.sqrt(var1/SERVER_COUNT);
+	//
+	//		//variation coefficient
+	//		var1 = var1 / average;
+	//
+	//		//NrOfCycles
+	//		cycleResult += j;
+	//		//V - variation
+	//		cycleResult += SEPARATOR + var1;
+	//		//S - overloaded servers
+	//		cycleResult += SEPARATOR + (float)overloadedServers/SERVER_COUNT;
+	//		//R - active servers
+	//		cycleResult += SEPARATOR + (float)activeServers/SERVER_COUNT;
+	//
+	//		cycleResult += "\n";
+	//		FileIO.append(cycleResult, "cycles.csv");
+	//
+	//		if(0 == j%30 || 29 == j%30) {
+	//			System.out.println("total CPU demand " + totalCPUDemand);
+	//			
+	//		}
+	//		if(29 == j%30) {
+	//			//NrOfCycles
+	//			epochResult += j/30;
+	//			//V - variation
+	//			epochResult += SEPARATOR + var1;
+	//			//S - overloaded servers
+	//			epochResult += SEPARATOR + (float)overloadedServers/SERVER_COUNT;
+	//			//R - active servers
+	//			epochResult += SEPARATOR + (float)activeServers/SERVER_COUNT;
+	//			//C - cost of reconfiguration
+	//			epochResult += SEPARATOR + totalReconfigCost;
+	//			
+	//			epochResult += "\n";
+	//			FileIO.append(epochResult, "epochs.csv");
+	//
+	//			//standard deviation
+	//			var2 = Math.sqrt(var2/activeServers);
+	//			//variation coefficient
+	//			var2 = var2 / realAverage;
+	//			
+	//			//NrOfCycles
+	//			auxResult += j/30;
+	//			//V
+	//			auxResult += SEPARATOR + var1;
+	//			//Optimum theoritical active servers
+	//			auxResult += SEPARATOR + totalCPUDemand/tau;
+	//			//Active servers
+	//			auxResult += SEPARATOR + activeServers;
+	//			//Overloaded servers - over cpu capacity
+	//			auxResult += SEPARATOR + overloadedServers;
+	//			//Loaded servers - over tau capacity
+	//			auxResult += SEPARATOR + loadedServers;
+	//			//Underloaded servers - bellow tau/2
+	//			auxResult += SEPARATOR + underloadedServers;
+	//			//Active servers with optimum load - in (tau-2,tau]
+	//			auxResult += SEPARATOR + optimumThresholdActive;
+	//			
+	//			auxResult += "\n";
+	//			FileIO.append(auxResult, "auxEpochs.csv");
+	//		}
+	//		return false;
+	//	}
 }
