@@ -122,10 +122,9 @@ public class PerformanceObserver implements Control {
 			if (cpuDemand > tau) { //servers with cpuDemand over tau
 				loadedServers++;
 			}
-			if (29 == j % 30) {
-				DistributedResourceAllocation p2 = (DistributedResourceAllocation) p;
-				totalReconfigCost += p2.getReconfigCost();
-			}
+			
+			DistributedResourceAllocation p2 = (DistributedResourceAllocation) p;
+			totalReconfigCost += p2.getReconfigCost();
 		}
 		
 		realAverage = totalCPUDemand / activeServers;
@@ -146,10 +145,8 @@ public class PerformanceObserver implements Control {
 		cycleResult += j;
 		//V - variation
 		cycleResult += SEPARATOR + var1;
-		//S - overloaded servers
-		cycleResult += SEPARATOR + (float) overloadedServers / SERVER_COUNT;
-		//R - active servers
-		cycleResult += SEPARATOR + (float) activeServers / SERVER_COUNT;
+		//C - cost of reconfiguration
+		cycleResult += SEPARATOR + totalReconfigCost;
 		
 		cycleResult += "\n";
 		FileIO.append(cycleResult, "cycles.csv");
@@ -163,10 +160,6 @@ public class PerformanceObserver implements Control {
 			epochResult += j / 30;
 			//V - variation
 			epochResult += SEPARATOR + var1;
-			//S - overloaded servers
-			epochResult += SEPARATOR + (float) overloadedServers / SERVER_COUNT;
-			//R - active servers
-			epochResult += SEPARATOR + (float) activeServers / SERVER_COUNT;
 			//C - cost of reconfiguration
 			epochResult += SEPARATOR + totalReconfigCost;
 			
@@ -312,7 +305,7 @@ public class PerformanceObserver implements Control {
 	//			//NrOfCycles
 	//			auxResult += j/30;
 	//			//V
-	//			auxResult += SEPARATOR + var1;
+	//			auxResult += SEPARATOR + var2;
 	//			//Optimum theoritical active servers
 	//			auxResult += SEPARATOR + totalCPUDemand/tau;
 	//			//Active servers
