@@ -9,7 +9,7 @@ import peersim.EP2400.resourcealloc.tasks.util.Proposal;
 import peersim.EP2400.resourcealloc.tasks.util.Proposal.ProposalType;
 
 public class EnhancedStrategy extends PlacementStrategy {
-	private static final double	CPU_USAGE_THRESHOLD	= 70;
+	public final static double	CPU_USAGE_THRESHOLD	= 80;
 	
 	private double				CPUCapacity;
 	
