@@ -71,7 +71,8 @@ public class PerformanceObserver implements Control {
 
 	@Override
 	public boolean execute() {
-
+		j++;
+		
 		int overloadedServers = 0; //fraction of nodes over omega(cpu capacity)
 		int fTau = 0; //fraction of nodes over tau(cpu threshold)
 		ArrayList<Double> cpuDemandList = new ArrayList<Double>(SERVER_COUNT);
@@ -110,7 +111,7 @@ public class PerformanceObserver implements Control {
 			if(cpuDemand > tau) { //servers with cpuDemand over tau
 				fTau++;
 			}
-			if(0 == j%30) {
+			if(29 == j%30) {
 				DistributedResourceAllocation p2 = (DistributedResourceAllocation)p;
 				totalReconfigCost += p2.getReconfigCost();
 			}
@@ -145,7 +146,11 @@ public class PerformanceObserver implements Control {
 
 		auxResult += (float)fTau/SERVER_COUNT + SEPARATOR +   underloadedServers;
 
-		if(0 == j%30) {
+		if(0 == j%30 || 29 == j%30) {
+			System.out.println("total CPU demand " + totalCPUDemand);
+			
+		}
+		if(29 == j%30) {
 			//NrOfCycles
 			epochResult += j/30;
 			//V - variation
