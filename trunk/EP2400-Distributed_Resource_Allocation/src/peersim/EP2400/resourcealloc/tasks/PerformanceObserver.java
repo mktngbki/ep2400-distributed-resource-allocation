@@ -6,6 +6,7 @@ import java.util.Set;
 
 import peersim.EP2400.resourcealloc.base.ApplicationsManager;
 import peersim.EP2400.resourcealloc.base.DistributedPlacementProtocol;
+import peersim.EP2400.resourcealloc.tasks.placementStartegy.EnhancedStrategy;
 import peersim.EP2400.resourcealloc.util.FileIO;
 import peersim.config.Configuration;
 import peersim.core.Control;
@@ -86,7 +87,7 @@ public class PerformanceObserver implements Control {
 		
 		
 		int cpuCapacity = 100;
-		int tau = 80;
+		double tau = EnhancedStrategy.CPU_USAGE_THRESHOLD;
 		
 		double totalCPUDemand = ApplicationsManager.getInstance().applications().totalCPUDemand();
 		double average = totalCPUDemand / SERVER_COUNT;
