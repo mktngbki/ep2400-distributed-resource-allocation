@@ -4,7 +4,7 @@ import java.util.Set;
 
 import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
-import peersim.EP2400.resourcealloc.tasks.util.AppListInfo;
+import peersim.EP2400.resourcealloc.tasks.util.NodeView;
 
 public abstract class Strategy {
 	
@@ -71,7 +71,7 @@ public abstract class Strategy {
 		}
 	}
 
-	public abstract Result getPlacement(AppListInfo activeList, AppListInfo passiveList);
+	public abstract Result getPlacement(NodeView activeList, NodeView passiveList);
 	
 	protected Auxiliary splitNativeReceived(ApplicationsList appList, Set<Integer> receivedApps) {
 		ApplicationsList listNative = new ApplicationsList();
