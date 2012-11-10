@@ -52,19 +52,19 @@ public class DistributedResourceAllocationEasy extends DistributedPlacementProto
 			currentSystemLoadView = ownApps.totalCPUDemand();
 		}
 		
-		// Decide which strategy the node should enforce, given its view of the load of the system
-		if (currentSystemLoadView > TAU) {
-			pStrategy = new LoadBalanceStrategy();
-		} else {
-			pStrategy = new EnergyEfficiencyStrategy(this.getCpuCapacity());
-		}
-		
 		// Build the node view and send it to the passive thread of the selected neighbor
 		NodeView myView = new NodeView(ownApps, currentSystemLoadView);
 		NodeView neighborView = neighbor.passiveThread(myView);
 		
 		// Update the current system load view by averaging the two node views
 		currentSystemLoadView = (currentSystemLoadView + neighborView.getCurrentSystemLoadView()) / 2;
+		
+		// Decide which strategy the node should enforce, given its the updated view of the load of the system
+		if (currentSystemLoadView > TAU) {
+			pStrategy = new LoadBalanceStrategy();
+		} else {
+			pStrategy = new EnergyEfficiencyStrategy(getCpuCapacity());
+		}
 		
 		// Process the information, apply the relevant strategy and get the updated info
 		Result result = pStrategy.getPlacement(myView, neighborView);
@@ -77,15 +77,18 @@ public class DistributedResourceAllocationEasy extends DistributedPlacementProto
 	}
 	
 	public NodeView passiveThread(NodeView neighborView) {
+		// Build the node view
+		NodeView myView = new NodeView(applicationsList(), ownReceivedApps, currentSystemLoadView);
+		
+		// Update the current system load view by averaging the two node views
+		currentSystemLoadView = (currentSystemLoadView + neighborView.getCurrentSystemLoadView()) / 2;
+		
 		// Decide which strategy the node should enforce, given its view of the load of the system
 		if (currentSystemLoadView > TAU) {
 			pStrategy = new LoadBalanceStrategy();
 		} else {
-			pStrategy = new EnergyEfficiencyStrategy(this.getCpuCapacity());
+			pStrategy = new EnergyEfficiencyStrategy(getCpuCapacity());
 		}
-		
-		// Build the node view
-		NodeView myView = new NodeView(applicationsList(), ownReceivedApps, currentSystemLoadView);
 		
 		// Process the information, apply the relevant strategy and get the updated info
 		Result result = pStrategy.getPlacement(neighborView, myView);
