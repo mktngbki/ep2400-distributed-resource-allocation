@@ -36,12 +36,12 @@ public class DistributedResourceAllocationEasy extends
 		if (!peer.isUp())
 			return;
 
-		DistributedResourceAllocationEasy n_prime = (DistributedResourceAllocationEasy) peer.getProtocol(protocolID);
+		DistributedResourceAllocationEasy neighbor = (DistributedResourceAllocationEasy) peer.getProtocol(protocolID);
 
 		// send and receive message by method call. This follows the
 		// cycle-driven simulation approach.
 		ApplicationsList ownApps = this.applicationsList();
-		ApplicationsList neighborApps = n_prime.passiveThread(ownApps);
+		ApplicationsList neighborApps = neighbor.passiveThread(ownApps);
 
 		this.updatePlacement(neighborApps);
 
