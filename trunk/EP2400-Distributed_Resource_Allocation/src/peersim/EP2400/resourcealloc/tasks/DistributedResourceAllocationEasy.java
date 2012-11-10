@@ -56,7 +56,7 @@ public class DistributedResourceAllocationEasy extends DistributedPlacementProto
 		if (currentSystemLoadView > TAU) {
 			pStrategy = new LoadBalanceStrategy();
 		} else {
-			pStrategy = new EnergyEfficiencyStrategy();
+			pStrategy = new EnergyEfficiencyStrategy(this.getCpuCapacity());
 		}
 		
 		// Build the node view and send it to the passive thread of the selected neighbor
@@ -81,7 +81,7 @@ public class DistributedResourceAllocationEasy extends DistributedPlacementProto
 		if (currentSystemLoadView > TAU) {
 			pStrategy = new LoadBalanceStrategy();
 		} else {
-			pStrategy = new EnergyEfficiencyStrategy();
+			pStrategy = new EnergyEfficiencyStrategy(this.getCpuCapacity());
 		}
 		
 		// Build the node view
