@@ -20,7 +20,7 @@ public abstract class Strategy {
 		public ApplicationsList getListNative() {
 			return listNative;
 		}
-		public ApplicationsList getListReceived() {
+		public ApplicationsList getListMoved() {
 			return listReceived;
 		}
 	}
