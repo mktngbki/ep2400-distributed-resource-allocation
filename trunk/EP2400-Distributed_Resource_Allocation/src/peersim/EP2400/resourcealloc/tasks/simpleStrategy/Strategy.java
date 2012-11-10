@@ -1,5 +1,6 @@
 package peersim.EP2400.resourcealloc.tasks.simpleStrategy;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import peersim.EP2400.resourcealloc.base.Application;
@@ -33,6 +34,17 @@ public abstract class Strategy {
 		private Set<Application> passiveAllocated;
 		private Set<Application> passiveDeallocated;
 		private Set<Integer> passiveMovedAppIds;
+		
+		public Result() {
+			activeAllocated = new HashSet<Application>();
+			activeDeallocated = new HashSet<Application>();
+			activeMovedAppIds = new HashSet<Integer>();
+			
+			passiveAllocated = new HashSet<Application>();
+			passiveDeallocated = new HashSet<Application>();
+			passiveMovedAppIds = new HashSet<Integer>();
+		}
+		
 		public Set<Application> getActiveAllocated() {
 			return activeAllocated;
 		}
