@@ -5,6 +5,8 @@ import java.util.Set;
 import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
 import peersim.EP2400.resourcealloc.base.DistributedPlacementProtocol;
+import peersim.EP2400.resourcealloc.tasks.simpleStrategy.EnergyEfficiencyStrategy;
+import peersim.EP2400.resourcealloc.tasks.simpleStrategy.LoadBalanceStrategy;
 import peersim.EP2400.resourcealloc.tasks.simpleStrategy.Strategy;
 import peersim.EP2400.resourcealloc.tasks.simpleStrategy.Strategy.Result;
 import peersim.EP2400.resourcealloc.tasks.util.NodeView;
@@ -13,12 +15,12 @@ import peersim.core.CommonState;
 import peersim.core.Linkable;
 import peersim.core.Node;
 
-public class DistributedResourceAllocationEasy extends
-	DistributedPlacementProtocol {
+public class DistributedResourceAllocationEasy extends DistributedPlacementProtocol {
+	private static final double	TAU						= 80;
 	
-	private Strategy		pStrategy;
-	private Set<Integer>	ownReceivedApps;				// apps that i receive so from the reconfiguration cost, i already paid 1 for it, so moving further does not cost us extra
-	private double			currentSystemLoadView	= -1;
+	private Strategy			pStrategy;
+	private Set<Integer>		ownReceivedApps;				// apps that i receive so from the reconfiguration cost, i already paid 1 for it, so moving further does not cost us extra
+	private double				currentSystemLoadView	= -1;
 	
 	public DistributedResourceAllocationEasy(String prefix) {
 		super(prefix);
@@ -50,6 +52,13 @@ public class DistributedResourceAllocationEasy extends
 			currentSystemLoadView = ownApps.totalCPUDemand();
 		}
 		
+		// Decide which strategy the node should enforce, given its view of the load of the system
+		if (currentSystemLoadView > TAU) {
+			pStrategy = new LoadBalanceStrategy();
+		} else {
+			pStrategy = new EnergyEfficiencyStrategy();
+		}
+		
 		// Build the node view and send it to the passive thread of the selected neighbor
 		NodeView myView = new NodeView(ownApps, currentSystemLoadView);
 		NodeView neighborView = neighbor.passiveThread(myView);
@@ -68,6 +77,13 @@ public class DistributedResourceAllocationEasy extends
 	}
 	
 	public NodeView passiveThread(NodeView neighborView) {
+		// Decide which strategy the node should enforce, given its view of the load of the system
+		if (currentSystemLoadView > TAU) {
+			pStrategy = new LoadBalanceStrategy();
+		} else {
+			pStrategy = new EnergyEfficiencyStrategy();
+		}
+		
 		// Build the node view
 		NodeView myView = new NodeView(applicationsList(), ownReceivedApps, currentSystemLoadView);
 		
