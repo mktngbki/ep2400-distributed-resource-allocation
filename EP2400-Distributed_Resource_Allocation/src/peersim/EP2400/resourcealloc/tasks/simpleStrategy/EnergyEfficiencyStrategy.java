@@ -57,13 +57,6 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		double initStd = Math.sqrt((Math.pow(initActiveCPU - initAvg, 2) + Math.pow(initPassiveCPU - initAvg, 2))/2);
 		double initVar = initStd/initAvg;
 
-		if(initActiveApps.totalCPUDemand() == initPassiveApps.totalCPUDemand()) {
-			result = new Result();
-			result.setActiveMovedAppIds(activeMovedAppIds);
-			result.setPassiveMovedAppIds(passiveMovedAppIds);
-			return result;
-		}
-
 		ApplicationsList activeNativeApps = activeSplitResult.getListNative();
 		ApplicationsList passiveNativeApps = passiveSplitResult.getListNative();
 		ApplicationsList movedApps = new ApplicationsList();
