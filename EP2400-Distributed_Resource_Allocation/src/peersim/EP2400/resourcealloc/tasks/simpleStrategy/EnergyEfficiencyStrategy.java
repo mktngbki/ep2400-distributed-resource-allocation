@@ -99,7 +99,7 @@ public class EnergyEfficiencyStrategy extends Strategy {
 					higherMovedAppIds.add(app.getID());
 				}
 				it.remove();
-				higherCPU = higherCPU - app.getCPUDemand();
+				higherCPU = higherCPU + app.getCPUDemand();
 			}
 		}
 
@@ -116,7 +116,7 @@ public class EnergyEfficiencyStrategy extends Strategy {
 				higherMovedAppIds.add(app.getID());
 				lowerDeallocated.add(app);
 				it.remove();
-				higherCPU = higherCPU - app.getCPUDemand();
+				higherCPU = higherCPU + app.getCPUDemand();
 			}
 		}
 
@@ -150,20 +150,21 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		finalActiveApps.addAll(initActiveApps);
 		finalActiveApps.addAll(result.getActiveAllocated());
 		finalActiveApps.removeAll(result.getActiveDeallocated());
-		
+
 		ApplicationsList finalPassiveApps = new ApplicationsList();
 		finalPassiveApps.addAll(initPassiveApps);
 		finalPassiveApps.addAll(result.getPassiveAllocated());
 		finalPassiveApps.removeAll(result.getPassiveDeallocated());
-		
+
 		double finalActiveCPU = finalActiveApps.totalCPUDemand();
 		double finalPassiveCPU = finalPassiveApps.totalCPUDemand();
 		double finalAvg = (finalActiveCPU + finalPassiveCPU)/2;
 		double finalStd = Math.sqrt((Math.pow(finalActiveCPU - finalAvg, 2) + Math.pow(finalPassiveCPU - finalAvg, 2))/2);
 		double finalVar = finalStd/finalAvg;
-		
+
 		//if our result is worse that initial placement we keep initial placement
-		if(finalVar < initVar) {
+		if(finalVar < initVar || finalActiveCPU > cpuCapacity || finalPassiveCPU > cpuCapacity) {
+			result = new Result();
 			result.setActiveMovedAppIds(activeMovedAppIds);
 			result.setPassiveMovedAppIds(passiveMovedAppIds);
 		}
