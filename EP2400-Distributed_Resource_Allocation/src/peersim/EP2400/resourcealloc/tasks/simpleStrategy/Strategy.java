@@ -71,7 +71,7 @@ public abstract class Strategy {
 		}
 	}
 
-	public abstract Result getPlacement(NodeView activeList, NodeView passiveList);
+	public abstract Result getPlacement(NodeView activeView, NodeView passiveView);
 	
 	protected Auxiliary splitNativeReceived(ApplicationsList appList, Set<Integer> receivedApps) {
 		ApplicationsList listNative = new ApplicationsList();
