@@ -12,6 +12,11 @@ import peersim.EP2400.resourcealloc.tasks.util.AppListInfo;
 
 public class EnergyEfficiencyStrategy extends Strategy {
 
+	private double cpuCapacity;
+	
+	public EnergyEfficiencyStrategy(double cpuCapacity) {
+		this.cpuCapacity = cpuCapacity;
+	}
 	
 	@Override
 	public Result getPlacement(AppListInfo activeList, AppListInfo passiveList) {
@@ -25,8 +30,8 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		ApplicationsList activeNativeApps = activeSplitResult.getListNative();
 		ApplicationsList pasiveNativeApps = passiveSplitResult.getListNative();
 		ApplicationsList movedApps = new ApplicationsList();
-		movedApps.addAll(activeSplitResult.getListReceived());
-		movedApps.addAll(passiveSplitResult.getListReceived());
+		movedApps.addAll(activeSplitResult.getListMoved());
+		movedApps.addAll(passiveSplitResult.getListMoved());
 
 		double activeNativeCPU = activeNativeApps.totalCPUDemand();
 		double passiveNativeCPU = pasiveNativeApps.totalCPUDemand();

@@ -8,45 +8,45 @@ import java.util.Set;
 import peersim.EP2400.resourcealloc.base.Application;
 import peersim.EP2400.resourcealloc.base.ApplicationsList;
 import peersim.EP2400.resourcealloc.tasks.util.AppCPUComparator;
-import peersim.EP2400.resourcealloc.tasks.util.AppListInfo;
+import peersim.EP2400.resourcealloc.tasks.util.NodeView;
 
 public class LoadBalanceStrategy extends Strategy {
 
-	public Result getPlacement(AppListInfo activeList, AppListInfo passiveList) {
+	public Result getPlacement(NodeView activeView, NodeView passiveView) {
 		
-		Set<Integer> activeMovedAppId = activeList.getMovedApps();
-		Set<Integer> passiveMovedAppId = passiveList.getMovedApps();
+		final Set<Integer> activeMovedAppIds = activeView.getMovedApps();
+		final Set<Integer> passiveMovedAppIds = passiveView.getMovedApps();
 
-		Auxiliary activeSplitResult = splitNativeReceived(activeList.getAppList(), activeMovedAppId);
-		Auxiliary passiveSplitResult = splitNativeReceived(passiveList.getAppList(), passiveMovedAppId);
+		final Auxiliary activeSplitResult = splitNativeReceived(activeView.getAppList(), activeMovedAppIds);
+		final Auxiliary passiveSplitResult = splitNativeReceived(passiveView.getAppList(), passiveMovedAppIds);
 
-		ApplicationsList activeNative = activeSplitResult.getListNative();
-		ApplicationsList passiveNative = passiveSplitResult.getListNative();
-		ApplicationsList movedApps = new ApplicationsList();
-		movedApps.addAll(activeSplitResult.getListReceived());
-		movedApps.addAll(passiveSplitResult.getListReceived());
-
-		double activeNativeCPU = activeNative.totalCPUDemand();
-		double passiveNativeCPU = passiveNative.totalCPUDemand();
-		double movedCPU = movedApps.totalCPUDemand();
+		final double activeNativeCPU = activeSplitResult.getListNative().totalCPUDemand();
+		final double passiveNativeCPU = passiveSplitResult.getListNative().totalCPUDemand();
+		final double activeMovedCPU = activeSplitResult.getListMoved().totalCPUDemand();
+		final double passiveMovedCPU = passiveSplitResult.getListMoved().totalCPUDemand();
 
 		//TODO figure in report
-		if(Math.abs(activeNativeCPU - passiveNativeCPU) > movedCPU) {
-			double transferCPU = (activeNativeCPU - passiveNativeCPU - movedCPU)/2;
-			//this sorts the list in revers, bigger cpu utilization app is first
+		if(Math.abs(activeNativeCPU - passiveNativeCPU) > (activeMovedCPU + passiveMovedCPU)) {
+			double transferCPU = (Math.abs(activeNativeCPU - passiveNativeCPU) - activeMovedCPU - passiveMovedCPU)/2;
 			
-			ApplicationsList higherApps = new ApplicationsList();
-			ApplicationsList lowerApps = new ApplicationsList();
-			Set<Integer> higherMovedAppIds = new HashSet<Integer>();
 			Set<Integer> lowerMovedAppIds = new HashSet<Integer>();
+			Set<Application> higherAllocated = new HashSet<Application>();
+			Set<Application> higherDeallocated = new HashSet<Application>();
+			Set<Application> lowerAllocated = new HashSet<Application>();
+			Set<Application> lowerDeallocated = new HashSet<Application>();
+			ApplicationsList higherApps = new ApplicationsList();
 			
 			if(activeNativeCPU > passiveNativeCPU) {
-				higherApps.addAll(activeNative);
-				lowerApps.addAll(passiveNative);
+				higherApps.addAll(activeSplitResult.getListNative());
+				higherDeallocated.addAll(activeSplitResult.getListMoved());
+				lowerAllocated.addAll(activeSplitResult.getListMoved());
 			} else {
-				higherApps.addAll(passiveNative);
-				lowerApps.addAll(activeNative);
+				higherApps.addAll(passiveSplitResult.getListNative());
+				higherDeallocated.addAll(passiveSplitResult.getListMoved());
+				lowerAllocated.addAll(passiveSplitResult.getListMoved());
 			}
+			lowerMovedAppIds.addAll(activeMovedAppIds);
+			lowerMovedAppIds.addAll(passiveMovedAppIds);
 			
 			Collections.sort(higherApps, new AppCPUComparator());
 			Iterator<Application> it = higherApps.iterator();
@@ -56,48 +56,74 @@ public class LoadBalanceStrategy extends Strategy {
 				}
 				Application app = it.next();
 				if(transferCPU >= app.getCPUDemand()) {
-					it.remove();
-					lowerApps.add(app);
+					higherDeallocated.add(app);
+					
+					lowerAllocated.add(app);
 					lowerMovedAppIds.add(app.getID());
+					
 					transferCPU = transferCPU - app.getCPUDemand();
 				}
 			}
-
-			lowerApps.addAll(movedApps);
-			lowerMovedAppIds.addAll(activeMovedAppId);
-			lowerMovedAppIds.addAll(passiveMovedAppId);
-
-			Result result;
+			
+			Result result = new Result();
 			if(activeNativeCPU > passiveNativeCPU) {
-				result = new Result(new AppListInfo(higherApps), new AppListInfo(lowerApps, lowerMovedAppIds));
+				result.setActiveAllocated(higherAllocated);
+				result.setActiveDeallocated(higherDeallocated);
+				result.setActiveMovedAppIds(new HashSet<Integer>());
+				result.setPassiveAllocated(lowerAllocated);
+				result.setPassiveDeallocated(lowerDeallocated);
+				result.setPassiveMovedAppIds(lowerMovedAppIds);
 			} else {
-				result = new Result(new AppListInfo(lowerApps, lowerMovedAppIds), new AppListInfo(higherApps));			
+				result.setActiveAllocated(lowerAllocated);
+				result.setActiveDeallocated(lowerDeallocated);
+				result.setActiveMovedAppIds(lowerMovedAppIds);
+				result.setPassiveAllocated(higherAllocated);
+				result.setPassiveDeallocated(higherDeallocated);
+				result.setPassiveMovedAppIds(new HashSet<Integer>());
 			}
 			return result;
 		} else {
-			Collections.sort(movedApps, new AppCPUComparator());
-
-			activeMovedAppId = new HashSet<Integer>();
-			passiveMovedAppId = new HashSet<Integer>();
-			ApplicationsList activeApps = new ApplicationsList();
-			activeApps.addAll(activeNative);
-			ApplicationsList passiveApps = new ApplicationsList();
-			passiveApps.addAll(passiveNative);
-
+			Set<Integer> newActiveMovedAppIds = new HashSet<Integer>();
+			Set<Integer> newPassiveMovedAppIds = new HashSet<Integer>();
+			
+			Set<Application> activeAllocated = new HashSet<Application>();
+			Set<Application> activeDeallocated = new HashSet<Application>();
+			Set<Application> passiveAllocated = new HashSet<Application>();
+			Set<Application> passiveDeallocated = new HashSet<Application>();
+			
 			double activeCPU = activeNativeCPU;
 			double passiveCPU = passiveNativeCPU;
 
+			//this sorts the list in revers, bigger cpu utilization app is first
+			ApplicationsList movedApps = new ApplicationsList();
+			movedApps.addAll(activeSplitResult.getListMoved());
+			movedApps.addAll(passiveSplitResult.getListMoved());
+			Collections.sort(movedApps, new AppCPUComparator());
 			for(Application app : movedApps) {
 				if(activeCPU > passiveCPU) {
-					activeApps.add(app);
-					activeMovedAppId.add(app.getID());
+					if(passiveMovedAppIds.contains(app.getID())) {
+						passiveDeallocated.add(app);
+						activeAllocated.add(app);
+					}
+					newActiveMovedAppIds.add(app.getID());
+					activeCPU += app.getCPUDemand();
 				} else {
-					passiveApps.add(app);
-					passiveMovedAppId.add(app.getID());
+					if(activeMovedAppIds.contains(app.getID())) {
+						activeDeallocated.add(app);
+						passiveAllocated.add(app);
+					}
+					newPassiveMovedAppIds.add(app.getID());
+					passiveCPU += app.getCPUDemand();
 				}
 			}
 			
-			Result result = new Result(new AppListInfo(activeApps, activeMovedAppId), new AppListInfo(passiveApps, passiveMovedAppId));
+			Result result = new Result();
+			result.setActiveAllocated(activeAllocated);
+			result.setActiveDeallocated(activeDeallocated);
+			result.setActiveMovedAppIds(newActiveMovedAppIds);
+			result.setPassiveAllocated(passiveAllocated);
+			result.setPassiveDeallocated(passiveDeallocated);
+			result.setPassiveMovedAppIds(newPassiveMovedAppIds);
 			return result;
 		}
 	}
