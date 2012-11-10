@@ -16,9 +16,10 @@ public class NodeView {
 		this.currentSystemLoadView = currentSystemLoadView;
 	}
 	
-	public NodeView(ApplicationsList appList, Set<Integer> receivedApps) {
+	public NodeView(ApplicationsList appList, Set<Integer> receivedApps, double currentSystemLoadView) {
 		this.appList = appList;
 		this.receivedApps = receivedApps;
+		this.currentSystemLoadView = currentSystemLoadView;
 	}
 	
 	public ApplicationsList getAppList() {
