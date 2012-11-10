@@ -63,7 +63,7 @@ public class PerformanceObserver implements Control {
 		//TODO change separator from ; to ,
 		FileIO.append("N;V;C\n", "cycles.csv");
 		FileIO.append("N;V;C\n", "epochs.csv");
-		FileIO.append("N;V;OptimumTheoritical;Active;Overloaded;Loaded;Underloaded;OptimumThresholdActive;ReconfigCost;CPUDemand\n", "auxEpochs.csv");
+		FileIO.append("N;V;Active;Overloaded;Loaded;Underloaded;ReconfigCost;CPUDemand\n", "auxEpochs.csv");
 	}
 
 	protected final static int	SERVER_COUNT	= 10000;
@@ -350,7 +350,6 @@ public class PerformanceObserver implements Control {
 		int activeServers = 0;
 		int overloadedServers = 0; //fraction of nodes over omega(cpu capacity)
 		int loadedServers = 0; //fraction of nodes over tau(cpu threshold)
-		int optimumThresholdActive = 0;
 		int underloadedServers = 0;
 
 		for(int i = 0; i < SERVER_COUNT; i++) {
@@ -361,16 +360,13 @@ public class PerformanceObserver implements Control {
 			if(cpuDemand != 0) {
 				activeServers++;
 			}
-			if(0 != cpuDemand && cpuDemand <= tau/2) {
+			if(0 != cpuDemand && cpuDemand <= tau) {
 				underloadedServers++;
-			}
-			if((tau-2) < cpuDemand && cpuDemand <= tau) {
-				optimumThresholdActive++;
 			}
 			if(cpuDemand > cpuCapacity) {
 				overloadedServers++;
 			}
-			if(cpuDemand > tau) { //servers with cpuDemand over tau
+			if(cpuCapacity > cpuDemand && cpuDemand > tau) { //servers with cpuDemand over tau
 				loadedServers++;
 			}
 			if(29 == j%30) {
@@ -435,8 +431,6 @@ public class PerformanceObserver implements Control {
 			auxResult += j/30;
 			//V
 			auxResult += SEPARATOR + var2;
-			//Optimum theoritical active servers
-			auxResult += SEPARATOR + totalCPUDemand/tau;
 			//Active servers
 			auxResult += SEPARATOR + activeServers;
 			//Overloaded servers - over cpu capacity
@@ -445,10 +439,10 @@ public class PerformanceObserver implements Control {
 			auxResult += SEPARATOR + loadedServers;
 			//Underloaded servers - bellow tau/2
 			auxResult += SEPARATOR + underloadedServers;
-			//Active servers with optimum load - in (tau-2,tau]
-			auxResult += SEPARATOR + optimumThresholdActive;
 			//Cost of reconfiguration
 			auxResult += SEPARATOR + totalReconfigCost;
+			//total CPU demand
+			auxResult += SEPARATOR + totalCPUDemand;
 
 			auxResult += "\n";
 			FileIO.append(auxResult, "auxEpochs.csv");

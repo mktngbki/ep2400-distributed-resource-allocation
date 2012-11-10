@@ -62,11 +62,7 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		currentSystemLoadView = (currentSystemLoadView + receivedView.getCurrentSystemLoadView()) / 2;
 
 		// Decide which strategy the node should enforce, given its the updated view of the load of the system
-		if (currentSystemLoadView > TAU) {
-			pStrategy = new LoadBalanceStrategy();
-		} else {
-			pStrategy = new EnergyEfficiencyStrategy(getCpuCapacity());
-		}
+		pStrategy = chooseStrategy(myView, receivedView);
 
 		// Process the information, apply the relevant strategy and get the updated info
 		Result result = pStrategy.getPlacement(myView, receivedView);
@@ -90,11 +86,8 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		currentSystemLoadView = (currentSystemLoadView + receivedView.getCurrentSystemLoadView()) / 2;
 
 		// Decide which strategy the node should enforce, given its view of the load of the system
-		if (currentSystemLoadView > TAU) {
-			pStrategy = new LoadBalanceStrategy();
-		} else {
-			pStrategy = new EnergyEfficiencyStrategy(getCpuCapacity());
-		}
+		pStrategy = chooseStrategy(myView, receivedView);
+		
 
 		// Process the information, apply the relevant strategy and get the updated info
 		Result result = pStrategy.getPlacement(receivedView, myView);
@@ -109,6 +102,21 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		return sentView;
 	}
 
+	private Strategy chooseStrategy(NodeView view1, NodeView view2) {
+		double cpuLoad = view1.getAppList().totalCPUDemand();
+		if(cpuLoad > this.cpuCapacity) {
+			return new LoadBalanceStrategy();
+		}
+		cpuLoad = view2.getAppList().totalCPUDemand();
+		if(cpuLoad > this.cpuCapacity) {
+			return new LoadBalanceStrategy();
+		}
+		if (currentSystemLoadView > TAU) {
+			return new LoadBalanceStrategy();
+		} else {
+			return new EnergyEfficiencyStrategy(getCpuCapacity());
+		}
+	}
 	public void updatePlacement(Set<Application> allocated, Set<Application> deallocated) {
 		// Allocate apps received in this cycle
 		for (Application app : allocated) {
