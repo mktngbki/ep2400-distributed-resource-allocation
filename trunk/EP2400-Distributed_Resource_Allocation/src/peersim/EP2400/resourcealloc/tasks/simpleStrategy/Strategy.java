@@ -25,25 +25,52 @@ public abstract class Strategy {
 		}
 	}
 	
-	protected static class Result {
-		private AppListInfo activeResult;
-		private AppListInfo passiveResult;
-
-		public Result(AppListInfo activeResult, AppListInfo passiveResult) {
-			this.activeResult = activeResult;
-			this.passiveResult = passiveResult;
+	public static class Result {
+		private Set<Application> activeAllocated;
+		private Set<Application> activeDeallocated;
+		private Set<Integer> activeMovedAppIds;
+		
+		private Set<Application> passiveAllocated;
+		private Set<Application> passiveDeallocated;
+		private Set<Integer> passiveMovedAppIds;
+		public Set<Application> getActiveAllocated() {
+			return activeAllocated;
 		}
-
-		public AppListInfo getActiveResult() {
-			return activeResult;
+		public void setActiveAllocated(Set<Application> activeAllocated) {
+			this.activeAllocated = activeAllocated;
 		}
-
-		public AppListInfo getPassiveResult() {
-			return passiveResult;
+		public Set<Application> getActiveDeallocated() {
+			return activeDeallocated;
+		}
+		public void setActiveDeallocated(Set<Application> activeDeallocated) {
+			this.activeDeallocated = activeDeallocated;
+		}
+		public Set<Integer> getActiveMovedAppIds() {
+			return activeMovedAppIds;
+		}
+		public void setActiveMovedAppIds(Set<Integer> activeMovedAppIds) {
+			this.activeMovedAppIds = activeMovedAppIds;
+		}
+		public Set<Application> getPassiveAllocated() {
+			return passiveAllocated;
+		}
+		public void setPassiveAllocated(Set<Application> passiveAllocated) {
+			this.passiveAllocated = passiveAllocated;
+		}
+		public Set<Application> getPassiveDeallocated() {
+			return passiveDeallocated;
+		}
+		public void setPassiveDeallocated(Set<Application> passiveDeallocated) {
+			this.passiveDeallocated = passiveDeallocated;
+		}
+		public Set<Integer> getPassiveMovedAppIds() {
+			return passiveMovedAppIds;
+		}
+		public void setPassiveMovedAppIds(Set<Integer> passiveMovedAppIds) {
+			this.passiveMovedAppIds = passiveMovedAppIds;
 		}
 	}
 
-	
 	public abstract Result getPlacement(AppListInfo activeList, AppListInfo passiveList);
 	
 	protected Auxiliary splitNativeReceived(ApplicationsList appList, Set<Integer> receivedApps) {
