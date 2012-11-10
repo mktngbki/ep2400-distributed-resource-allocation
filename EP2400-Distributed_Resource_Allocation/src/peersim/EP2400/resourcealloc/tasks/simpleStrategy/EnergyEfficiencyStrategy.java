@@ -51,7 +51,6 @@ public class EnergyEfficiencyStrategy extends Strategy {
 			result.setPassiveDeallocated(new HashSet<Application>(initPassiveApps));
 			return result;
 		}
-
 		//calculate initial variance
 		//we will decide if the new placement is better based on variance comparison
 		double initAvg = (initActiveCPU + initPassiveCPU)/2;
