@@ -85,12 +85,17 @@ public abstract class Strategy {
 
 	public abstract Result getPlacement(NodeView activeView, NodeView passiveView);
 	
-	protected Auxiliary splitNativeReceived(ApplicationsList appList, Set<Integer> receivedApps) {
+	protected Auxiliary splitNativeReceived(NodeView nodeView) {
 		ApplicationsList listNative = new ApplicationsList();
 		ApplicationsList listReceived = new ApplicationsList();
 
-		for(Application app : appList) {
-			if(receivedApps.contains(app.getID())) {
+		//don't change just for iterating
+		ApplicationsList finalAppList = nodeView.getAppList(); 
+		Set<Integer> finalReceivedAppIds = nodeView.getMovedApps();
+		//
+		
+		for(Application app : finalAppList) {
+			if(finalReceivedAppIds.contains(app.getID())) {
 				listReceived.add(app);
 			} else {
 				listNative.add(app);
