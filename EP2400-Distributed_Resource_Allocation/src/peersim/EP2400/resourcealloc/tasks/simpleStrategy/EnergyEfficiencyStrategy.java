@@ -199,7 +199,7 @@ public class EnergyEfficiencyStrategy extends Strategy {
 			result.setActiveMovedAppIds(new HashSet<Integer>(activeView.getMovedApps()));
 			result.setPassiveMovedAppIds(new HashSet<Integer>(passiveView.getMovedApps()));
 		}
-		// If the initial CPU demand of both the nodes were less than CPU Capacity and if the final variance is less than initial one  - Abort (Initial state was better, so a do nothing placement is returned instead)
+		// If the initial CPU demand of both the nodes were less than CPU Capacity and if the final variance is less than the initial one  - Abort (Initial state was better, so a do nothing placement is returned instead)
 		else {
 			if (initActiveCPU < cpuCapacity && initPassiveCPU < cpuCapacity) {
 				if (finalVar < initVar) {
