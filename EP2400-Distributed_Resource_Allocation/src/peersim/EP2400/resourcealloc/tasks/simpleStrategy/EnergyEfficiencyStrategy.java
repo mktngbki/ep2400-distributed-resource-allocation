@@ -35,7 +35,7 @@ public class EnergyEfficiencyStrategy extends Strategy {
 
 		Result result = new Result();
 		//if one of the servers is inactive, we cannot do a better energy efficiency placement
-		if(0 == initActiveCPU || 0 == initPassiveCPU) {
+		if((0 == initActiveCPU || 0 == initPassiveCPU)&&!(cpuCapacity < initActiveCPU || cpuCapacity < initPassiveCPU)) {
 			result.setActiveMovedAppIds(activeMovedAppIds);
 			result.setPassiveMovedAppIds(passiveMovedAppIds);
 			return result;
