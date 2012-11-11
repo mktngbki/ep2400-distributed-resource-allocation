@@ -78,6 +78,9 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		// Build the node view
 		ApplicationsList ownApps = applicationsList();
 		ApplicationsList sentApps = (ApplicationsList)ownApps.clone();
+		if (-1 == currentSystemLoadView) {
+			currentSystemLoadView = ownApps.totalCPUDemand();
+		}
 		Set<Integer> sentOwnReceivedApps = (Set<Integer>)((HashSet<Integer>)ownReceivedApps).clone();
 		NodeView myView = new NodeView(ownApps, ownReceivedApps, currentSystemLoadView);
 		NodeView sentView = new NodeView(sentApps, sentOwnReceivedApps, currentSystemLoadView);
@@ -103,14 +106,7 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 	}
 
 	private Strategy chooseStrategy(NodeView view1, NodeView view2) {
-		double cpuLoad = view1.getAppList().totalCPUDemand();
-		if(cpuLoad > this.cpuCapacity) {
-			return new LoadBalanceStrategy();
-		}
-		cpuLoad = view2.getAppList().totalCPUDemand();
-		if(cpuLoad > this.cpuCapacity) {
-			return new LoadBalanceStrategy();
-		}
+
 		if (currentSystemLoadView > TAU) {
 			return new LoadBalanceStrategy();
 		} else {

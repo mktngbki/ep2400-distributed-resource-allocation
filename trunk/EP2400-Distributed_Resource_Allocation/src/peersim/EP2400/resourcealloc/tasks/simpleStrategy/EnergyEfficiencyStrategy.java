@@ -70,22 +70,52 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		Set<Application> lowerAllocated = new HashSet<Application>();
 		Set<Application> lowerDeallocated = new HashSet<Application>();
 		ApplicationsList lowerApps = new ApplicationsList();
+		ApplicationsList higherApps = new ApplicationsList();
 
 		double higherCPU;
+		double lowerCPU;
+
 		if(activeNativeCPU > passiveNativeCPU) {
 			lowerApps.addAll(passiveNativeApps);
+			higherApps.addAll(activeNativeApps);
 			higherCPU = activeNativeCPU;
-			lowerMovedAppIds = passiveMovedAppIds; 
-			higherMovedAppIds = activeMovedAppIds;
+			lowerCPU = passiveNativeCPU;
+			lowerMovedAppIds = (Set<Integer>)((HashSet<Integer>)passiveMovedAppIds).clone(); 
+			higherMovedAppIds = (Set<Integer>)((HashSet<Integer>)activeMovedAppIds).clone();
 		} else {
 			lowerApps.addAll(activeNativeApps);
+			higherApps.addAll(passiveNativeApps);
 			higherCPU = passiveNativeCPU;
-			lowerMovedAppIds = activeMovedAppIds;
-			higherMovedAppIds = passiveMovedAppIds;
+			lowerCPU = activeNativeCPU;
+			lowerMovedAppIds = (Set<Integer>)((HashSet<Integer>)activeMovedAppIds).clone();
+			higherMovedAppIds = (Set<Integer>)((HashSet<Integer>)passiveMovedAppIds).clone();
 		}
 
+		Iterator<Application> it;
+		if(higherCPU > cpuCapacity) {
+			Collections.sort(higherApps, new AppCPUComparator());
+			it = higherApps.iterator();
+			while(it.hasNext()) {
+				if(cpuCapacity >= higherCPU) {
+					break;
+				}
+				Application app = it.next();
+				//				if(cpuCapacity-lowerCPU >= app.getCPUDemand()) {
+				//					higherDeallocated.add(app);
+				//					lowerAllocated.add(app);
+				//					movedApps.add(app);
+				//					lowerMovedAppIds.add(app.getID());
+				//					it.remove();
+				//					higherCPU = higherCPU - app.getCPUDemand();
+				//					lowerCPU = lowerCPU + app.getCPUDemand();
+				//				}
+				movedApps.add(app);
+				it.remove();
+				higherCPU = higherCPU - app.getCPUDemand();
+			}
+		}
 		Collections.sort(movedApps, new AppCPUComparator());
-		Iterator<Application> it = movedApps.iterator();
+		it = movedApps.iterator();
 		while(it.hasNext()) {
 			if(cpuCapacity == higherCPU) {
 				break;
@@ -162,11 +192,36 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		double finalStd = Math.sqrt((Math.pow(finalActiveCPU - finalAvg, 2) + Math.pow(finalPassiveCPU - finalAvg, 2))/2);
 		double finalVar = finalStd/finalAvg;
 
-		//if our result is worse that initial placement we keep initial placement
-		if(finalVar < initVar || finalActiveCPU > cpuCapacity || finalPassiveCPU > cpuCapacity) {
+		if(finalActiveCPU > cpuCapacity || finalPassiveCPU > cpuCapacity) {
 			result = new Result();
 			result.setActiveMovedAppIds(activeMovedAppIds);
 			result.setPassiveMovedAppIds(passiveMovedAppIds);
+//			if(initActiveCPU > cpuCapacity || initPassiveCPU > cpuCapacity) {
+//				System.out.println("aborted and still overloaded");
+//				System.out.println(initActiveCPU + " " +  initPassiveCPU);
+//				System.out.println(finalActiveCPU + " " + finalPassiveCPU);
+//				System.out.println(activeView.getCurrentSystemLoadView() + " " + passiveView.getCurrentSystemLoadView());
+//			}
+		} else {
+			if(initActiveCPU > cpuCapacity || initPassiveCPU > cpuCapacity) {
+				//good
+//				System.out.println("good");
+			} 
+			//if our result is worse that initial placement we keep initial placement
+			else if(finalVar < initVar) {
+				result = new Result();
+				result.setActiveMovedAppIds(activeMovedAppIds);
+				result.setPassiveMovedAppIds(passiveMovedAppIds);
+				//			if(finalActiveCPU > cpuCapacity || finalPassiveCPU > cpuCapacity) {
+				//				System.out.println("energy abort - over cpu");
+				//				System.out.println(initActiveCPU + " " +  initPassiveCPU);
+				//				System.out.println(finalActiveCPU + " " + finalPassiveCPU);
+				//			} else {
+				//				System.out.println("energy abort - bad strategy");
+				//				System.out.println(initActiveCPU + " " +  initPassiveCPU);
+				//				System.out.println(finalActiveCPU + " " + finalPassiveCPU);
+				//			}
+			}  
 		}
 		return result;
 	}
