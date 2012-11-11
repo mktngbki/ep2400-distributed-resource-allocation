@@ -87,6 +87,7 @@ public class PerformanceObserver implements Control {
 
 		int cpuCapacity = 100;
 		double tau = DistributedResourceAllocation.TAU;
+		int nrOfApps = ApplicationsManager.getInstance().applications().size();
 
 		double totalCPUDemand = ApplicationsManager.getInstance().applications().totalCPUDemand();
 		double average =  totalCPUDemand / SERVER_COUNT;
@@ -122,12 +123,10 @@ public class PerformanceObserver implements Control {
 				overloadedServers++;
 			}
 
-			if(29 == j%30) {
-				DistributedResourceAllocation p2 = (DistributedResourceAllocation)p;
-				totalReconfigCost += p2.getReconfigCost();
-			}
+			DistributedResourceAllocation p2 = (DistributedResourceAllocation)p;
+			totalReconfigCost += p2.getReconfigCost();
+	
 			if(0 == j%30) {
-				DistributedResourceAllocation p2 = (DistributedResourceAllocation)p;
 				p2.resetView();
 			}
 		}
@@ -155,7 +154,7 @@ public class PerformanceObserver implements Control {
 			//R - active servers
 			cycleResult += SEPARATOR + (float)activeServers/SERVER_COUNT;
 			//C - cost of reconfiguration
-			cycleResult += SEPARATOR + (float)totalReconfigCost/SERVER_COUNT;
+			cycleResult += SEPARATOR + (float)totalReconfigCost/nrOfApps;
 			//S - overloaded servers
 			cycleResult += SEPARATOR + (float)overloadedServers/SERVER_COUNT;
 
@@ -172,7 +171,7 @@ public class PerformanceObserver implements Control {
 			//R - active servers
 			epochResult += SEPARATOR + (float)activeServers/SERVER_COUNT;
 			//C - cost of reconfiguration
-			epochResult += SEPARATOR + (float)totalReconfigCost/SERVER_COUNT;
+			epochResult += SEPARATOR + (float)totalReconfigCost/nrOfApps;
 			//S - overloaded servers
 			epochResult += SEPARATOR + (float)overloadedServers/SERVER_COUNT;
 
