@@ -47,8 +47,9 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		DistributedResourceAllocation neighbor = (DistributedResourceAllocation) peer.getProtocol(protocolID);
 
 		ApplicationsList ownApps = applicationsList();
-		ApplicationsList sentApps = (ApplicationsList)ownApps.clone();
-		Set<Integer> sentOwnReceivedApps = (Set<Integer>)((HashSet<Integer>)ownReceivedApps).clone();
+		ApplicationsList sentApps = new ApplicationsList();
+		sentApps.addAll(ownApps);
+		Set<Integer> sentOwnReceivedApps = new HashSet<Integer>(ownReceivedApps);
 		// Initialize in every epoch the current system load view with the local CPU demand
 		if (-1 == currentSystemLoadView) {
 			currentSystemLoadView = ownApps.totalCPUDemand();
@@ -58,15 +59,6 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		NodeView sentView = new NodeView(sentApps, sentOwnReceivedApps, currentSystemLoadView);
 		NodeView receivedView = neighbor.passiveThread(sentView);
 
-//		System.out.println(node.getID() + " " + peer.getID());
-//		if(node.getID() == 6406) {
-//			System.out.println("view " + currentSystemLoadView); 
-//			System.out.println("load" + ownApps.totalCPUDemand());
-//		}
-//		if(peer.getID() == 6406) {
-//			System.out.println("view" + receivedView.getCurrentSystemLoadView());
-//			System.out.println("load" + receivedView.getAppList().totalCPUDemand());
-//		}
 		// Update the current system load view by averaging the two node views
 		currentSystemLoadView = (currentSystemLoadView + receivedView.getCurrentSystemLoadView()) / 2;
 
@@ -86,11 +78,14 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 	public NodeView passiveThread(NodeView receivedView) {
 		// Build the node view
 		ApplicationsList ownApps = applicationsList();
-		ApplicationsList sentApps = (ApplicationsList)ownApps.clone();
+		ApplicationsList sentApps = new ApplicationsList();
+		sentApps.addAll(ownApps);
+		Set<Integer> sentOwnReceivedApps = new HashSet<Integer>(ownReceivedApps);
+		
 		if (-1 == currentSystemLoadView) {
 			currentSystemLoadView = ownApps.totalCPUDemand();
 		}
-		Set<Integer> sentOwnReceivedApps = (Set<Integer>)((HashSet<Integer>)ownReceivedApps).clone();
+		
 		NodeView myView = new NodeView(ownApps, ownReceivedApps, currentSystemLoadView);
 		NodeView sentView = new NodeView(sentApps, sentOwnReceivedApps, currentSystemLoadView);
 
@@ -100,7 +95,6 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		// Decide which strategy the node should enforce, given its view of the load of the system
 		pStrategy = chooseStrategy(myView, receivedView);
 		
-
 		// Process the information, apply the relevant strategy and get the updated info
 		Result result = pStrategy.getPlacement(receivedView, myView);
 
@@ -115,19 +109,13 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 	}
 
 	private Strategy chooseStrategy(NodeView view1, NodeView view2) {
-
-//		if(view1.getAppList().totalCPUDemand() > cpuCapacity || view2.getAppList().totalCPUDemand() > cpuCapacity) {
-//			
-//			System.out.println("view " + view1.getCurrentSystemLoadView() + " " + view2.getCurrentSystemLoadView());
-//			System.out.println("cpudemand " + view1.getAppList().totalCPUDemand() + " " + view2.getAppList().totalCPUDemand());
-//			System.exit(1);
-//		}
 		if (currentSystemLoadView > TAU) {
 			return new LoadBalanceStrategy();
 		} else {
 			return new EnergyEfficiencyStrategy(getCpuCapacity());
 		}
 	}
+	
 	public void updatePlacement(Set<Application> allocated, Set<Application> deallocated) {
 		// Allocate apps received in this cycle
 		for (Application app : allocated) {
@@ -140,13 +128,18 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		}
 	}
 
+	//at end of epoch we reset our view of the system load
 	public void resetView() {
 		currentSystemLoadView = -1;
 	}
-	public int getReconfigCost() {
-		int reconfigCost = ownReceivedApps.size();
+	
+	//at the end of epoch all apps that are currently on this node become native
+	public void resetReceivedApps() {
 		ownReceivedApps = new HashSet<Integer>();
-		return reconfigCost;
+	}
+	
+	public int getReconfigCost() {
+		return ownReceivedApps.size();
 	}
 
 	@Override

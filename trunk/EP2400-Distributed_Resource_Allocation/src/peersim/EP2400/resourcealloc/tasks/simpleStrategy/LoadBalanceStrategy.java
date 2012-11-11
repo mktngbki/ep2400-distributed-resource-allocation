@@ -14,12 +14,11 @@ public class LoadBalanceStrategy extends Strategy {
 
 	public Result getPlacement(NodeView activeView, NodeView passiveView) {
 
-		final ApplicationsList initActiveApps = activeView.getAppList();
-		final ApplicationsList initPassiveApps = passiveView.getAppList();
-		final Set<Integer> activeMovedAppIds = activeView.getMovedApps();
-		final Set<Integer> passiveMovedAppIds = passiveView.getMovedApps();
-		final Auxiliary activeSplitResult = splitNativeReceived(initActiveApps, activeMovedAppIds);
-		final Auxiliary passiveSplitResult = splitNativeReceived(initPassiveApps, passiveMovedAppIds);
+		final Set<Integer> activeMovedAppIds = new HashSet<Integer>(activeView.getMovedApps()); 
+		final Set<Integer> passiveMovedAppIds = new HashSet<Integer>(passiveView.getMovedApps());
+		final Auxiliary activeSplitResult = splitNativeReceived(activeView);
+		final Auxiliary passiveSplitResult = splitNativeReceived(passiveView);
+
 		final double activeNativeCPU = activeSplitResult.getListNative().totalCPUDemand();
 		final double passiveNativeCPU = passiveSplitResult.getListNative().totalCPUDemand();
 		final double activeMovedCPU = activeSplitResult.getListMoved().totalCPUDemand();
@@ -34,10 +33,10 @@ public class LoadBalanceStrategy extends Strategy {
 		double initVar = initStd/initAvg;
 
 		Result result;
-		if(initActiveApps.totalCPUDemand() == initPassiveApps.totalCPUDemand()) {
+		if(initActiveCPU == initPassiveCPU) {
 			result = new Result();
-			result.setActiveMovedAppIds(activeMovedAppIds);
-			result.setPassiveMovedAppIds(passiveMovedAppIds);
+			result.setActiveMovedAppIds(new HashSet<Integer>(activeView.getMovedApps()));
+			result.setPassiveMovedAppIds(new HashSet<Integer>(passiveView.getMovedApps()));
 			return result;
 		}
 
@@ -61,8 +60,8 @@ public class LoadBalanceStrategy extends Strategy {
 				higherDeallocated.addAll(passiveSplitResult.getListMoved());
 				lowerAllocated.addAll(passiveSplitResult.getListMoved());
 			}
-			lowerMovedAppIds.addAll(activeMovedAppIds);
-			lowerMovedAppIds.addAll(passiveMovedAppIds);
+			lowerMovedAppIds.addAll(activeView.getMovedApps());
+			lowerMovedAppIds.addAll(passiveView.getMovedApps());
 
 			Collections.sort(higherApps, new AppCPUComparator());
 			Iterator<Application> it = higherApps.iterator();
@@ -73,10 +72,8 @@ public class LoadBalanceStrategy extends Strategy {
 				Application app = it.next();
 				if(transferCPU >= app.getCPUDemand()) {
 					higherDeallocated.add(app);
-
 					lowerAllocated.add(app);
 					lowerMovedAppIds.add(app.getID());
-
 					transferCPU = transferCPU - app.getCPUDemand();
 				}
 			}
@@ -116,14 +113,14 @@ public class LoadBalanceStrategy extends Strategy {
 			Collections.sort(movedApps, new AppCPUComparator());
 			for(Application app : movedApps) {
 				if(currActiveCPU > currPassiveCPU) {
-					if(!passiveMovedAppIds.contains(app.getID())) {
+					if(activeView.getMovedApps().contains(app.getID())) {
 						activeDeallocated.add(app);
 						passiveAllocated.add(app);
 					}
 					newPassiveMovedAppIds.add(app.getID());
 					currPassiveCPU += app.getCPUDemand();
 				} else {
-					if(!activeMovedAppIds.contains(app.getID())) {
+					if(passiveView.getMovedApps().contains(app.getID())) {
 						passiveDeallocated.add(app);
 						activeAllocated.add(app);
 					}
@@ -142,12 +139,12 @@ public class LoadBalanceStrategy extends Strategy {
 		}
 
 		ApplicationsList finalActiveApps = new ApplicationsList();
-		finalActiveApps.addAll(initActiveApps);
+		finalActiveApps.addAll(activeView.getAppList());
 		finalActiveApps.addAll(result.getActiveAllocated());
 		finalActiveApps.removeAll(result.getActiveDeallocated());
 
 		ApplicationsList finalPassiveApps = new ApplicationsList();
-		finalPassiveApps.addAll(initPassiveApps);
+		finalPassiveApps.addAll(passiveView.getAppList());
 		finalPassiveApps.addAll(result.getPassiveAllocated());
 		finalPassiveApps.removeAll(result.getPassiveDeallocated());
 

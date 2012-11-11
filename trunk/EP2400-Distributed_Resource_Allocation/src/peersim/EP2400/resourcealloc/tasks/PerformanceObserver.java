@@ -127,10 +127,11 @@ public class PerformanceObserver implements Control {
 			totalReconfigCost += p2.getReconfigCost();
 	
 			if(0 == j%30) {
+				p2.resetReceivedApps();
 				p2.resetView();
 			}
 		}
-
+		
 		realAverage = totalCPUDemand / activeServers;
 
 		for(Double cpuDemand : cpuDemandList) {

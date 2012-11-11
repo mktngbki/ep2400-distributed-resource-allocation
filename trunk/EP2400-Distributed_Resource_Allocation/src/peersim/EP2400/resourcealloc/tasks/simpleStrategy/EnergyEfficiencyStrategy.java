@@ -20,12 +20,11 @@ public class EnergyEfficiencyStrategy extends Strategy {
 
 	@Override
 	public Result getPlacement(NodeView activeView, NodeView passiveView) {
-		final ApplicationsList initActiveApps = activeView.getAppList();
-		final ApplicationsList initPassiveApps = passiveView.getAppList();
-		final Set<Integer> activeMovedAppIds = activeView.getMovedApps();
-		final Set<Integer> passiveMovedAppIds = passiveView.getMovedApps();
-		final Auxiliary activeSplitResult = splitNativeReceived(initActiveApps, activeMovedAppIds);
-		final Auxiliary passiveSplitResult = splitNativeReceived(initPassiveApps, passiveMovedAppIds);
+		final Set<Integer> activeMovedAppIds = new HashSet<Integer>(activeView.getMovedApps()); 
+		final Set<Integer> passiveMovedAppIds = new HashSet<Integer>(passiveView.getMovedApps());
+		final Auxiliary activeSplitResult = splitNativeReceived(activeView);
+		final Auxiliary passiveSplitResult = splitNativeReceived(passiveView);
+
 		final double activeNativeCPU = activeSplitResult.getListNative().totalCPUDemand();
 		final double passiveNativeCPU = passiveSplitResult.getListNative().totalCPUDemand();
 		final double activeMovedCPU = activeSplitResult.getListMoved().totalCPUDemand();
@@ -36,19 +35,19 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		Result result = new Result();
 		//if one of the servers is inactive, we cannot do a better energy efficiency placement
 		if((0 == initActiveCPU || 0 == initPassiveCPU)&&!(cpuCapacity < initActiveCPU || cpuCapacity < initPassiveCPU)) {
-			result.setActiveMovedAppIds(activeMovedAppIds);
-			result.setPassiveMovedAppIds(passiveMovedAppIds);
+			result.setActiveMovedAppIds(new HashSet<Integer>(activeView.getMovedApps()));
+			result.setPassiveMovedAppIds(new HashSet<Integer>(passiveView.getMovedApps()));
 			return result;
 		}
 
 		//if we can move all the applications to one server, this is the best energy efficiency placement
 		if(initActiveCPU + initPassiveCPU <= cpuCapacity) {
-			result.setActiveAllocated(new HashSet<Application>(initPassiveApps));
-			for (Application app : initPassiveApps) {
+			result.setActiveAllocated(new HashSet<Application>(passiveView.getAppList()));
+			for (Application app : passiveView.getAppList()) {
 				activeMovedAppIds.add(app.getID());
 			}
-			result.setActiveMovedAppIds(activeMovedAppIds);
-			result.setPassiveDeallocated(new HashSet<Application>(initPassiveApps));
+			result.setActiveMovedAppIds(new HashSet<Integer>(activeMovedAppIds));
+			result.setPassiveDeallocated(new HashSet<Application>(passiveView.getAppList()));
 			return result;
 		}
 		//calculate initial variance
@@ -63,6 +62,7 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		movedApps.addAll(activeSplitResult.getListMoved());
 		movedApps.addAll(passiveSplitResult.getListMoved());
 
+		//variables used to create the final result
 		Set<Integer> lowerMovedAppIds = new HashSet<Integer>();
 		Set<Integer> higherMovedAppIds = new HashSet<Integer>();
 		Set<Application> higherAllocated = new HashSet<Application>();
@@ -80,15 +80,15 @@ public class EnergyEfficiencyStrategy extends Strategy {
 			higherApps.addAll(activeNativeApps);
 			higherCPU = activeNativeCPU;
 			lowerCPU = passiveNativeCPU;
-			lowerMovedAppIds = (Set<Integer>)((HashSet<Integer>)passiveMovedAppIds).clone(); 
-			higherMovedAppIds = (Set<Integer>)((HashSet<Integer>)activeMovedAppIds).clone();
+			lowerMovedAppIds = new HashSet<Integer>(passiveMovedAppIds); 
+			higherMovedAppIds = new HashSet<Integer>(activeMovedAppIds);
 		} else {
 			lowerApps.addAll(activeNativeApps);
 			higherApps.addAll(passiveNativeApps);
 			higherCPU = passiveNativeCPU;
 			lowerCPU = activeNativeCPU;
-			lowerMovedAppIds = (Set<Integer>)((HashSet<Integer>)activeMovedAppIds).clone();
-			higherMovedAppIds = (Set<Integer>)((HashSet<Integer>)passiveMovedAppIds).clone();
+			lowerMovedAppIds = new HashSet<Integer>(activeMovedAppIds);
+			higherMovedAppIds = new HashSet<Integer>(passiveMovedAppIds);
 		}
 
 		Iterator<Application> it;
@@ -100,15 +100,6 @@ public class EnergyEfficiencyStrategy extends Strategy {
 					break;
 				}
 				Application app = it.next();
-				//				if(cpuCapacity-lowerCPU >= app.getCPUDemand()) {
-				//					higherDeallocated.add(app);
-				//					lowerAllocated.add(app);
-				//					movedApps.add(app);
-				//					lowerMovedAppIds.add(app.getID());
-				//					it.remove();
-				//					higherCPU = higherCPU - app.getCPUDemand();
-				//					lowerCPU = lowerCPU + app.getCPUDemand();
-				//				}
 				movedApps.add(app);
 				it.remove();
 				higherCPU = higherCPU - app.getCPUDemand();
@@ -143,8 +134,8 @@ public class EnergyEfficiencyStrategy extends Strategy {
 			Application app = it.next();
 			if(cpuCapacity - higherCPU >= app.getCPUDemand()) {
 				higherAllocated.add(app);
-				higherMovedAppIds.add(app.getID());
 				lowerDeallocated.add(app);
+				higherMovedAppIds.add(app.getID());
 				it.remove();
 				higherCPU = higherCPU + app.getCPUDemand();
 			}
@@ -154,8 +145,8 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		for (Application app : movedApps) {
 			if(!lowerMovedAppIds.contains(app.getID())) {
 				higherDeallocated.add(app);
-				higherMovedAppIds.remove(app.getID());
 				lowerAllocated.add(app);
+				higherMovedAppIds.remove(app.getID());
 				lowerMovedAppIds.add(app.getID());
 			}
 		}
@@ -177,12 +168,12 @@ public class EnergyEfficiencyStrategy extends Strategy {
 		}
 
 		ApplicationsList finalActiveApps = new ApplicationsList();
-		finalActiveApps.addAll(initActiveApps);
+		finalActiveApps.addAll(activeView.getAppList());
 		finalActiveApps.addAll(result.getActiveAllocated());
 		finalActiveApps.removeAll(result.getActiveDeallocated());
 
 		ApplicationsList finalPassiveApps = new ApplicationsList();
-		finalPassiveApps.addAll(initPassiveApps);
+		finalPassiveApps.addAll(passiveView.getAppList());
 		finalPassiveApps.addAll(result.getPassiveAllocated());
 		finalPassiveApps.removeAll(result.getPassiveDeallocated());
 
@@ -194,36 +185,17 @@ public class EnergyEfficiencyStrategy extends Strategy {
 
 		if(finalActiveCPU > cpuCapacity || finalPassiveCPU > cpuCapacity) {
 			result = new Result();
-			result.setActiveMovedAppIds(activeMovedAppIds);
-			result.setPassiveMovedAppIds(passiveMovedAppIds);
-//			if(initActiveCPU > cpuCapacity || initPassiveCPU > cpuCapacity) {
-//				System.out.println("aborted and still overloaded");
-//				System.out.println(initActiveCPU + " " +  initPassiveCPU);
-//				System.out.println(finalActiveCPU + " " + finalPassiveCPU);
-//				System.out.println(activeView.getCurrentSystemLoadView() + " " + passiveView.getCurrentSystemLoadView());
-//			}
+			result.setActiveMovedAppIds(new HashSet<Integer>(activeView.getMovedApps()));
+			result.setPassiveMovedAppIds(new HashSet<Integer>(passiveView.getMovedApps()));
 		} else {
-			if(initActiveCPU > cpuCapacity || initPassiveCPU > cpuCapacity) {
-				//good
-//				System.out.println("good");
-			} 
-			//if our result is worse that initial placement we keep initial placement
-			else if(finalVar < initVar) {
-				result = new Result();
-				result.setActiveMovedAppIds(activeMovedAppIds);
-				result.setPassiveMovedAppIds(passiveMovedAppIds);
-				//			if(finalActiveCPU > cpuCapacity || finalPassiveCPU > cpuCapacity) {
-				//				System.out.println("energy abort - over cpu");
-				//				System.out.println(initActiveCPU + " " +  initPassiveCPU);
-				//				System.out.println(finalActiveCPU + " " + finalPassiveCPU);
-				//			} else {
-				//				System.out.println("energy abort - bad strategy");
-				//				System.out.println(initActiveCPU + " " +  initPassiveCPU);
-				//				System.out.println(finalActiveCPU + " " + finalPassiveCPU);
-				//			}
-			}  
+			if(initActiveCPU < cpuCapacity && initPassiveCPU < cpuCapacity) {
+				if(finalVar < initVar) {
+					result = new Result();
+					result.setActiveMovedAppIds(new HashSet<Integer>(activeView.getMovedApps()));
+					result.setPassiveMovedAppIds(new HashSet<Integer>(passiveView.getMovedApps()));
+				}  
+			}
 		}
-		return result;
+			return result;
+		}
 	}
-
-}
