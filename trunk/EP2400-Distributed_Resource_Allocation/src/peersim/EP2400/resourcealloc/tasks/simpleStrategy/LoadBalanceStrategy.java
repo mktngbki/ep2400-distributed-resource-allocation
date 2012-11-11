@@ -14,8 +14,6 @@ public class LoadBalanceStrategy extends Strategy {
 
 	public Result getPlacement(NodeView activeView, NodeView passiveView) {
 
-		final Set<Integer> activeMovedAppIds = new HashSet<Integer>(activeView.getMovedApps()); 
-		final Set<Integer> passiveMovedAppIds = new HashSet<Integer>(passiveView.getMovedApps());
 		final Auxiliary activeSplitResult = splitNativeReceived(activeView);
 		final Auxiliary passiveSplitResult = splitNativeReceived(passiveView);
 
@@ -128,7 +126,7 @@ public class LoadBalanceStrategy extends Strategy {
 					currActiveCPU += app.getCPUDemand();
 				}
 			}
-
+			
 			result = new Result();
 			result.setActiveAllocated(activeAllocated);
 			result.setActiveDeallocated(activeDeallocated);
@@ -148,6 +146,7 @@ public class LoadBalanceStrategy extends Strategy {
 		finalPassiveApps.addAll(result.getPassiveAllocated());
 		finalPassiveApps.removeAll(result.getPassiveDeallocated());
 
+		
 		double finalActiveCPU = finalActiveApps.totalCPUDemand();
 		double finalPassiveCPU = finalPassiveApps.totalCPUDemand();
 		double finalAvg = (finalActiveCPU + finalPassiveCPU)/2;
@@ -157,8 +156,8 @@ public class LoadBalanceStrategy extends Strategy {
 		//if our result is worse that initial placement we keep initial placement
 		if(finalVar > initVar) {
 			result = new Result();
-			result.setActiveMovedAppIds(activeMovedAppIds);
-			result.setPassiveMovedAppIds(passiveMovedAppIds);
+			result.setActiveMovedAppIds(new HashSet<Integer>(activeView.getMovedApps()));
+			result.setPassiveMovedAppIds(new HashSet<Integer>(passiveView.getMovedApps()));
 		}
 		return result;
 	}
