@@ -58,6 +58,15 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		NodeView sentView = new NodeView(sentApps, sentOwnReceivedApps, currentSystemLoadView);
 		NodeView receivedView = neighbor.passiveThread(sentView);
 
+//		System.out.println(node.getID() + " " + peer.getID());
+//		if(node.getID() == 6406) {
+//			System.out.println("view " + currentSystemLoadView); 
+//			System.out.println("load" + ownApps.totalCPUDemand());
+//		}
+//		if(peer.getID() == 6406) {
+//			System.out.println("view" + receivedView.getCurrentSystemLoadView());
+//			System.out.println("load" + receivedView.getAppList().totalCPUDemand());
+//		}
 		// Update the current system load view by averaging the two node views
 		currentSystemLoadView = (currentSystemLoadView + receivedView.getCurrentSystemLoadView()) / 2;
 
@@ -107,6 +116,12 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 
 	private Strategy chooseStrategy(NodeView view1, NodeView view2) {
 
+//		if(view1.getAppList().totalCPUDemand() > cpuCapacity || view2.getAppList().totalCPUDemand() > cpuCapacity) {
+//			
+//			System.out.println("view " + view1.getCurrentSystemLoadView() + " " + view2.getCurrentSystemLoadView());
+//			System.out.println("cpudemand " + view1.getAppList().totalCPUDemand() + " " + view2.getAppList().totalCPUDemand());
+//			System.exit(1);
+//		}
 		if (currentSystemLoadView > TAU) {
 			return new LoadBalanceStrategy();
 		} else {
@@ -125,10 +140,12 @@ public class DistributedResourceAllocation extends DistributedPlacementProtocol 
 		}
 	}
 
+	public void resetView() {
+		currentSystemLoadView = -1;
+	}
 	public int getReconfigCost() {
 		int reconfigCost = ownReceivedApps.size();
 		ownReceivedApps = new HashSet<Integer>();
-		currentSystemLoadView = -1;
 		return reconfigCost;
 	}
 
