@@ -1,0 +1,1 @@
+Development of gossip algorithms for resource allocation in a data-center. The project will include a simulation study.
